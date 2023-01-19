@@ -35,6 +35,9 @@ https://gitlab.com/otus_linux/stands-03-lvm
 `уменьшить том под / до 8G`
 
 </summary>
+	
+```
+	
 Будем выполнять данную операцию при помощи утилиты <b>xfsdump</b>. 
 Для начала освободим раздел sdb.
 Удалим поочереди логические тома через <b>lvremove</b>, далее удалим логическую группу <b>vgremove /dev/otus</b>, удалим физическую группу pvremove.
@@ -117,6 +120,8 @@ Found linux image: /boot/vmlinuz-3.10.0-862.2.3.el7.x86_64
 Found initrd image: /boot/initramfs-3.10.0-862.2.3.el7.x86_64.img
 done
 [root@lvm /]# reboot
+	
+```
 
 </details>
 
@@ -125,6 +130,9 @@ done
 `выделить том под /var (/var - сделать в mirror)`
 
 </summary>
+	
+```
+
 Очистим разделы sdc, sdd и на их месте сохдадим зеркало под var
 [root@lvm /]# pvcreate /dev/sdc /dev/sdd
   Physical volume "/dev/sdc" successfully created.
@@ -185,6 +193,8 @@ Try 'rm --help' for more information.
 [root@lvm /]# mount /dev/vg_var/lv_var /var
 [root@lvm /]# echo "`blkid | grep var: | awk '{print $2}'` /var ext4 defaults 0 0" >> /etc/fstab
 [root@lvm /]# 
+	
+```
 
 
 </details>
@@ -195,6 +205,9 @@ Try 'rm --help' for more information.
 `выделить том под /home`
 
 </summary>
+	
+```
+
 Делаем по аналогии с var
 Создаем раздел под Home на VolGroup00
 [root@lvm vagrant]# lvcreate -n LogVol_Home -L 2G /dev/VolGroup00
@@ -246,6 +259,8 @@ realtime =none                   extsz=4096   blocks=0, rtextents=0
 И создаем запись в fstab
 [root@lvm vagrant]# echo "`blkid | grep Home | awk '{print $2}'` /home xfs defaults 0 0" >> /etc/fstab
 [root@lvm vagrant]# 
+	
+```
 
 </details>
 
@@ -254,6 +269,9 @@ realtime =none                   extsz=4096   blocks=0, rtextents=0
 `Попробуем snapshot`
 
 </summary>
+		
+```
+
 Создадим файлы 
 [root@lvm vagrant]# cd /home/
 [root@lvm home]# ls
@@ -288,5 +306,7 @@ lsof    1521 root  cwd    DIR  253,2      152   64 /home
 [root@lvm /]# ls /home/
 file1  file10  file11  file12  file13  file14  file15  file16  file17  file18  file19  file2  file20  file3  file4  file5  file6  file7  file8  file9  vagrant
 [root@lvm /]# 
+	
+```
 
 </details>
