@@ -2,8 +2,8 @@
 
 ## Оглавление
 
-- ## <a href="#linux-administrator-_-lesson-3-1">Linux Administrator _ Lesson #3</a>
-- ## Linux Administrator _ Lesson #4
+- #### <a href="#linux-administrator-_-lesson-3-1">Linux Administrator _ Lesson #3</a>
+- #### <a href="#linux-administrator-_-lesson-4-1">Linux Administrator _ Lesson #4</a>
 
 ## Linux Administrator _ Lesson #3
 
@@ -319,20 +319,18 @@ file1  file10  file11  file12  file13  file14  file15  file16  file17  file18  f
 
 ## Linux Administrator _ Lesson #4
 
-```
+	Домашнее задание
+	
+	### Практические навыки работы с ZFS ###
+	
+	Цель:
+	Отрабатываем навыки работы с созданием томов export/import и установкой параметров.
 
-Домашнее задание
-<b>Практические навыки работы с ZFS</b>
-Цель:
-Отрабатываем навыки работы с созданием томов export/import и установкой параметров.
-
-определить алгоритм с наилучшим сжатием;
-определить настройки pool’a;
-найти сообщение от преподавателей.
-Результат:
-список команд, которыми получен результат с их выводами.
-
-```
+	определить алгоритм с наилучшим сжатием;
+	определить настройки pool’a;
+	найти сообщение от преподавателей.
+	Результат:
+	список команд, которыми получен результат с их выводами.
 
 <details>
 	<summary>	
