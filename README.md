@@ -2,7 +2,7 @@
 
 ## Оглавление
 
-- ## Linux Administrator _ Lesson #3
+- ## <a href="#linux-administrator-_-lesson-3-1">Linux Administrator _ Lesson #3</a>
 - ## Linux Administrator _ Lesson #4
 
 ## Linux Administrator _ Lesson #3
