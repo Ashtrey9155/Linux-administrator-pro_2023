@@ -4,6 +4,7 @@
 
 - #### <a href="#linux-administrator-_-lesson-3-1">Linux Administrator _ Lesson #3</a>
 - #### <a href="#linux-administrator-_-lesson-4-1">Linux Administrator _ Lesson #4</a>
+- #### <a href="#linux-administrator-_-lesson-5-1">Linux Administrator _ Lesson #5</a>
 
 ## Linux Administrator _ Lesson #3
 
@@ -821,4 +822,349 @@ Vagrant file:
 	  end
 	end
 	root@otuslearn:/home/ashtrey/less_04_zfs/sets_script# 
+</details>
 
+
+## Linux Administrator _ Lesson #5
+
+Домашнее задание
+
+	Vagrant стенд для NFS
+	Цель:
+	развернуть сервис NFS и подключить к нему клиента;
+	
+<details>
+	<summary>	
+		Создаём виртуальные машины server и client
+	</summary>
+
+Для начала создадим Vagrant файл, который создаст нам 2 ВМ:
+	
+		MACHINES = {
+	   :server => {
+		:box_name => "centos/7",
+		:box_version => "2004.01",
+		:provision => "init.sh",
+		:ip => "192.168.56.41",
+
+	   },
+	   :client => {
+		:box_name => "centos/7",
+		:box_version => "2004.01",
+		:provision => "init.sh",
+		:ip => "192.168.56.42",
+	   },
+	}
+
+
+	Vagrant.configure("2") do |config|
+
+		MACHINES.each do |boxname, boxconfig|
+
+			config.vm.define boxname do |box|
+
+				box.vm.box = boxconfig[:box_name]
+				box.vm.box_version = boxconfig[:box_version]
+				box.vm.host_name = boxname
+				box.vm.network "private_network", ip: boxconfig[:ip]
+
+				box.vm.provider :virtualbox do |vb|
+					vb.customize ["modifyvm", :id, "--memory", "1024"]
+				end
+
+				box.vm.provision "shell",
+					name: "configuretion_from_shell",
+					path: boxconfig[:provision]
+				end
+			end
+
+		end
+
+Результатом запуска vagrant up будет запущены две ВМ машины
+	
+	ashtrey@otuslearn:~/less_05_nfs$ vboxmanage list vms
+	"less_05_nfs_server_1674641508898_17420" {0bb01387-145d-4f0d-85d2-c74fc8e524cd}
+	"less_05_nfs_client_1674641649496_53544" {df7ccb0a-355d-44d6-8dd5-1f56dde80f7a}
+	ashtrey@otuslearn:~/less_05_nfs$ 
+	ashtrey@otuslearn:~/less_05_nfs$ vagrant status
+	Current machine states:
+
+	server                    running (virtualbox)
+	client                    running (virtualbox)
+
+</details>
+	
+<details>
+	<summary>	
+		2. Насиройка ВМ
+	</summary>
+
+Установим утилиты
+	
+	[root@server ~]# yum install nfs-utils
+	Loaded plugins: fastestmirror
+	Determining fastest mirrors
+	 * base: mirror.besthosting.ua
+	 * extras: mirror.besthosting.ua
+	 * updates: mirror.besthosting.ua
+
+	###########------ много текста ------###########
+	
+	Running transaction
+	  Updating   : 1:nfs-utils-1.3.0-0.68.el7.2.x86_64    1/2                                                                                                                                          
+	  Cleanup    : 1:nfs-utils-1.3.0-0.66.el7.x86_64       2/2                                                                                                                                                  
+	  Verifying  : 1:nfs-utils-1.3.0-0.68.el7.2.x86_64      1/2                                                                                                                                                 
+	  Verifying  : 1:nfs-utils-1.3.0-0.66.el7.x86_64       2/2                                                                                                                                                  
+
+	Updated:
+	  nfs-utils.x86_64 1:1.3.0-0.68.el7.2                                                                                                                                                                       
+
+	Complete!
+	[root@server ~]# 
+	
+Включаем firewall
+	
+	[root@server ~]# systemctl status firewalld
+	● firewalld.service - firewalld - dynamic firewall daemon
+	   Loaded: loaded (/usr/lib/systemd/system/firewalld.service; disabled; vendor preset: enabled)
+	   Active: inactive (dead)
+	     Docs: man:firewalld(1)
+	[root@server ~]# systemctl enable firewalld --now
+	Created symlink from /etc/systemd/system/dbus-org.fedoraproject.FirewallD1.service to /usr/lib/systemd/system/firewalld.service.
+	Created symlink from /etc/systemd/system/multi-user.target.wants/firewalld.service to /usr/lib/systemd/system/firewalld.service.
+	[root@server ~]# systemctl status firewalld
+	● firewalld.service - firewalld - dynamic firewall daemon
+	   Loaded: loaded (/usr/lib/systemd/system/firewalld.service; enabled; vendor preset: enabled)
+	   Active: active (running) since Wed 2023-01-25 10:40:35 UTC; 2s ago
+	     Docs: man:firewalld(1)
+	 Main PID: 3725 (firewalld)
+	   CGroup: /system.slice/firewalld.service
+		   └─3725 /usr/bin/python2 -Es /usr/sbin/firewalld --nofork --nopid
+
+	Jan 25 10:40:35 server systemd[1]: Starting firewalld - dynamic firewall daemon...
+	Jan 25 10:40:35 server systemd[1]: Started firewalld - dynamic firewall daemon.
+	Jan 25 10:40:35 server firewalld[3725]: WARNING: AllowZoneDrifting is enabled. This is considered an insecure configuration option. It will be removed in a future release. Please consider...abling it now.
+	Hint: Some lines were ellipsized, use -l to show in full.
+	
+ Разрешаем в firewall доступ к сервисам NFS
+	
+	[root@server ~]# firewall-cmd --add-service="nfs3"
+	success
+	[root@server ~]# firewall-cmd --add-service="rpc-bind"
+	success
+	[root@server ~]# firewall-cmd  --permanent firewall-cmd --reload
+	usage: see firewall-cmd man page
+	firewall-cmd: error: unrecognized arguments: firewall-cmd
+	[root@server ~]# firewall-cmd  --permanent firewall-cmd
+	usage: see firewall-cmd man page
+	firewall-cmd: error: unrecognized arguments: firewall-cmd
+	[root@server ~]# firewall-cmd   --reload
+	success
+	
+ Включаем сервер NFS
+	
+	[root@server ~]# systemctl enable nfs --now
+	Created symlink from /etc/systemd/system/multi-user.target.wants/nfs-server.service to /usr/lib/systemd/system/nfs-server.service.
+	
+Создадим дирикторию которая будет экспортирована, сменим владельца и дадим ей все права
+	
+	[root@server ~]# mkdir -p /srv/share/upload
+	[root@server ~]# chown -R nfsnobody:nfsnobody /srv/share
+
+	[root@server ~]# ls -lat /srv/share/
+	total 0
+	drwxr-xr-x. 3 nfsnobody nfsnobody 20 Jan 26 15:49 .
+	drwxr-xr-x. 3 root      root      19 Jan 26 15:49 ..
+	drwxr-xr-x. 2 nfsnobody nfsnobody  6 Jan 26 15:49 upload
+	
+	[root@server ~]# chmod 0777 /srv/share/upload
+	[root@server ~]# ls -lat /srv/share/
+	total 0
+	drwxr-xr-x. 3 nfsnobody nfsnobody 20 Jan 26 15:49 .
+	drwxr-xr-x. 3 root      root      19 Jan 26 15:49 ..
+	drwxrwxrwx. 2 nfsnobody nfsnobody  6 Jan 26 15:49 upload
+	
+Создадим файл и подготовим к экспорту
+	
+	[root@server ~]# echo "/srv/share 192.168.50.11/32(rw,sync,root_squash)" >> /etc/exports
+	
+	[root@server ~]# exportfs -r
+	[root@server ~]# exportfs -s
+	/srv/share  192.168.56.42/32(sync,wdelay,hide,no_subtree_check,sec=sys,rw,secure,root_squash,no_all_squash)
+	
+!!! Как оказалось этого не достаточно, на клиенте ни чего не монтируется и на fstab ругается консоль, после не продолжительного гугления был найден выход. Это правка firewall и самого файла fstab:
+	
+	[root@server ~]# systemctl enable rpcbind
+	[root@server ~]# systemctl enable nfs-server
+	[root@server ~]# systemctl start rpcbind
+	[root@server ~]# systemctl start nfs-server
+	[root@server ~]# firewall-cmd --permanent --add-port=111/tcp
+	success
+	[root@server ~]# firewall-cmd --permanent --add-port=20048/tcp
+	success
+	[root@server ~]# firewall-cmd --permanent --zone=public --add-service=nfs
+	success
+	[root@server ~]# 
+	[root@server ~]# firewall-cmd --permanent --zone=public --add-service=mountd
+	success
+	[root@server ~]# firewall-cmd --permanent --zone=public --add-service=rpc-bind
+	success
+	[root@server ~]# 
+	[root@server ~]# firewall-cmd --reload
+	success
+	
+	[root@client ~]# cat /etc/fstab 
+
+	#
+	# /etc/fstab
+	# Created by anaconda on Thu Apr 30 22:04:55 2020
+	#
+	# Accessible filesystems, by reference, are maintained under '/dev/disk'
+	# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+	#
+	UUID=1c419d6c-5064-4a2b-953c-05b2c67edb15 /                       xfs     defaults        0 0
+	/swapfile none swap defaults 0 0
+	#VAGRANT-BEGIN
+	# The contents below are automatically generated by Vagrant. Do not modify.
+	#VAGRANT-END
+	#192.168.56.41:/srv/share/ /mnt nfs vers=3,proto=udp,noauto,x- systemd.automount 0 0
+	192.168.56.41:/srv/share/ /mnt/ nfs rw,sync,hard,intr 0 0
+	
+
+На стороне клиента проверил командой mount -a 
+	
+	[root@client ~]# mount | grep /mnt
+	192.168.56.41:/srv/share on /mnt type nfs4 (rw,relatime,sync,vers=4.1,rsize=131072,wsize=131072,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,clientaddr=192.168.56.42,local_lock=none,addr=192.168.56.41)
+	
+Проверяем что монтирование директориц прошло удачно и возможно создать файлы на обоих сторонах:
+	
+	[root@server ~]# cd /srv/share/upload/
+	[root@server upload]# touch check_file
+	[root@server upload]# ls -la
+	total 0
+	drwxrwxrwx. 2 nfsnobody nfsnobody 43 Jan 27 20:59 .
+	drwxr-xr-x. 3 nfsnobody nfsnobody 20 Jan 26 15:49 ..
+	-rw-r--r--. 1 root      root       0 Jan 27 20:59 check_file
+	-rw-r--r--. 1 nfsnobody nfsnobody  0 Jan 27 20:59 client_file
+	[root@server upload]# 
+	
+	[root@client ~]# cd /mnt
+	[root@client mnt]# ls -la
+	total 0
+	drwxr-xr-x.  3 nfsnobody nfsnobody  20 Jan 26 15:49 .
+	dr-xr-xr-x. 18 root      root      255 Jan 25 10:14 ..
+	drwxrwxrwx.  2 nfsnobody nfsnobody  24 Jan 27 20:59 upload
+	[root@client mnt]# cd upload/
+	[root@client upload]# ls -la
+	total 0
+	drwxrwxrwx. 2 nfsnobody nfsnobody 24 Jan 27 20:59 .
+	drwxr-xr-x. 3 nfsnobody nfsnobody 20 Jan 26 15:49 ..
+	-rw-r--r--. 1 root      root       0 Jan 27 20:59 check_file
+	[root@client upload]# touch client_file
+	[root@client upload]# ls -la
+	total 0
+	drwxrwxrwx. 2 nfsnobody nfsnobody 43 Jan 27 20:59 .
+	drwxr-xr-x. 3 nfsnobody nfsnobody 20 Jan 26 15:49 ..
+	-rw-r--r--. 1 root      root       0 Jan 27 20:59 check_file
+	-rw-r--r--. 1 nfsnobody nfsnobody  0 Jan 27 20:59 client_file
+	[root@client upload]# 
+	
+Перезагружаем клиента и проверяем наличие файлов:
+	
+	[root@client upload]# reboot
+	Connection to 127.0.0.1 closed by remote host.
+	Connection to 127.0.0.1 closed.
+	ashtrey@otuslearn:~/less_05_nfs$ vagrant ssh client
+	Last login: Fri Jan 27 20:40:23 2023 from 10.0.2.2
+	[vagrant@client ~]$ 
+	[vagrant@client ~]$ 
+	[vagrant@client ~]$ ls -la /mnt/upload/
+	total 0
+	drwxrwxrwx. 2 nfsnobody nfsnobody 43 Jan 27 20:59 .
+	drwxr-xr-x. 3 nfsnobody nfsnobody 20 Jan 26 15:49 ..
+	-rw-r--r--. 1 root      root       0 Jan 27 20:59 check_file
+	-rw-r--r--. 1 nfsnobody nfsnobody  0 Jan 27 20:59 client_file
+	[vagrant@client ~]$ 
+	
+Перезагружаем сервер, проверяем что все на месте:
+	
+	[root@server upload]# reboot
+	Connection to 127.0.0.1 closed by remote host.
+	Connection to 127.0.0.1 closed.
+	ashtrey@otuslearn:~/less_05_nfs$ vagrant ssh server
+	Last login: Fri Jan 27 20:45:28 2023 from 10.0.2.2
+	[vagrant@server ~]$ ls -la /srv/share/upload/
+	total 0
+	drwxrwxrwx. 2 nfsnobody nfsnobody 43 Jan 27 20:59 .
+	drwxr-xr-x. 3 nfsnobody nfsnobody 20 Jan 26 15:49 ..
+	-rw-r--r--. 1 root      root       0 Jan 27 20:59 check_file
+	-rw-r--r--. 1 nfsnobody nfsnobody  0 Jan 27 20:59 client_file
+	[vagrant@server ~]$ 
+	
+Проверяем статусы:
+	
+	[vagrant@server ~]$ systemctl status nfs
+	● nfs-server.service - NFS server and services
+	   Loaded: loaded (/usr/lib/systemd/system/nfs-server.service; enabled; vendor preset: disabled)
+	  Drop-In: /run/systemd/generator/nfs-server.service.d
+		   └─order-with-mounts.conf
+	   Active: active (exited) since Fri 2023-01-27 21:04:11 UTC; 1min 28s ago
+	  Process: 808 ExecStartPost=/bin/sh -c if systemctl -q is-active gssproxy; then systemctl reload gssproxy ; fi (code=exited, status=0/SUCCESS)
+	  Process: 788 ExecStart=/usr/sbin/rpc.nfsd $RPCNFSDARGS (code=exited, status=0/SUCCESS)
+	  Process: 785 ExecStartPre=/usr/sbin/exportfs -r (code=exited, status=0/SUCCESS)
+	 Main PID: 788 (code=exited, status=0/SUCCESS)
+	   CGroup: /system.slice/nfs-server.service
+	
+	[vagrant@server ~]$ systemctl status firewalld
+	● firewalld.service - firewalld - dynamic firewall daemon
+	   Loaded: loaded (/usr/lib/systemd/system/firewalld.service; enabled; vendor preset: enabled)
+	   Active: active (running) since Fri 2023-01-27 21:04:08 UTC; 1min 38s ago
+	     Docs: man:firewalld(1)
+	 Main PID: 407 (firewalld)
+	   CGroup: /system.slice/firewalld.service
+		   └─407 /usr/bin/python2 -Es /usr/sbin/firewalld --nofork --nopid
+
+	[vagrant@server ~]$ sudo exportfs -s
+	/srv/share  192.168.56.42/32(sync,wdelay,hide,no_subtree_check,sec=sys,rw,secure,root_squash,no_all_squash)
+
+	[vagrant@server ~]$ showmount -a 192.168.56.41
+	All mount points on 192.168.56.41:
+	[vagrant@server ~]$ 
+
+Переходим снова к клиенту и совершаем финальные проверки:
+	
+	[vagrant@client ~]$ sudo reboot
+	Connection to 127.0.0.1 closed by remote host.
+	Connection to 127.0.0.1 closed.
+	ashtrey@otuslearn:~/less_05_nfs$ vagrant ssh client
+	Last login: Fri Jan 27 21:02:27 2023 from 10.0.2.2
+	[vagrant@client ~]$ sudo -i
+	[root@client ~]# showmount -a 192.168.56.41
+	All mount points on 192.168.56.41:
+	[root@client ~]# showmount -a 192.168.56.42
+	All mount points on 192.168.56.42:
+	[root@client ~]# mount | grep mnt
+	192.168.56.41:/srv/share on /mnt type nfs4 (rw,relatime,sync,vers=4.1,rsize=131072,wsize=131072,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,clientaddr=192.168.56.42,local_lock=none,addr=192.168.56.41)
+	[root@client ~]# cd /mnt/
+	[root@client mnt]# cd upload/
+	[root@client upload]# ls -la
+	total 0
+	drwxrwxrwx. 2 nfsnobody nfsnobody 43 Jan 27 20:59 .
+	drwxr-xr-x. 3 nfsnobody nfsnobody 39 Jan 27 21:10 ..
+	-rw-r--r--. 1 root      root       0 Jan 27 20:59 check_file
+	-rw-r--r--. 1 nfsnobody nfsnobody  0 Jan 27 20:59 client_file
+	[root@client upload]# touch final_check
+	[root@client upload]# ls -la
+	total 0
+	drwxrwxrwx. 2 nfsnobody nfsnobody 62 Jan 27 21:10 .
+	drwxr-xr-x. 3 nfsnobody nfsnobody 39 Jan 27 21:10 ..
+	-rw-r--r--. 1 root      root       0 Jan 27 20:59 check_file
+	-rw-r--r--. 1 nfsnobody nfsnobody  0 Jan 27 20:59 client_file
+	-rw-r--r--. 1 nfsnobody nfsnobody  0 Jan 27 21:10 final_check
+	[root@client upload]# 
+	
+На этом считаем что стенд настроен верно. Откорректируем Vagrant файл.
+	
+	
+
+</details>
