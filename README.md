@@ -896,7 +896,7 @@ Vagrant file:
 	
 <details>
 	<summary>	
-		2. Насиройка ВМ
+		2. Настройка ВМ
 	</summary>
 
 Установим утилиты
