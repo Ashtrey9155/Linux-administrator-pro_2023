@@ -1,0 +1,45 @@
+# -*- mode: ruby -*-
+# vim: set ft=ruby :
+#disk_controller = 'IDE' # MacOS. This setting is OS dependent. Details https://github.com/hashicorp/vagrant/issues/8105
+
+
+MACHINES = {
+   :server => {
+	:box_name => "centos/7", 
+	:box_version => "2004.01",    
+	:provision => "init_server.sh",
+	:ip => "192.168.56.41",
+        
+   },
+   :client => {
+	:box_name => "centos/7",
+        :box_version => "2004.01",
+        :provision => "init_client.sh",
+        :ip => "192.168.56.42",
+   },
+}
+
+
+Vagrant.configure("2") do |config|
+
+	MACHINES.each do |boxname, boxconfig|
+
+		config.vm.define boxname do |box|
+
+			box.vm.box = boxconfig[:box_name]
+			box.vm.box_version = boxconfig[:box_version]
+			box.vm.host_name = boxname
+			box.vm.network "private_network", ip: boxconfig[:ip]
+
+			box.vm.provider :virtualbox do |vb|
+				vb.customize ["modifyvm", :id, "--memory", "1024"]
+			end
+			
+			box.vm.provision "shell", 
+				name: "configuretion_from_shell",
+				path: boxconfig[:provision]
+			end
+		end
+
+	end
+#end
