@@ -5,6 +5,7 @@
 - #### <a href="#linux-administrator-_-lesson-3-1">Linux Administrator _ Lesson #3</a>
 - #### <a href="#linux-administrator-_-lesson-4-1">Linux Administrator _ Lesson #4</a>
 - #### <a href="#linux-administrator-_-lesson-5-1">Linux Administrator _ Lesson #5</a>
+- #### <a href="#linux-administrator-_-lesson-5-1">Linux Administrator _ Lesson #6</a>
 
 ## Linux Administrator _ Lesson #3
 
@@ -1293,5 +1294,135 @@ Vagrant file:
 Все настроено и работает исправно!
 	
 	
+</details>
+
+## Linux Administrator _ Lesson #6
+
+Домашнее задание
+Размещаем свой RPM в своем репозитории
+
+1. Cоздать свой RPM (можно взять свое приложение, либо собрать к примеру апач с определенными опциями);
+создать свой репо и разместить там свой RPM;
+2. Реализовать это все либо в вагранте, либо развернуть у себя через nginx и дать ссылку на репо.
+3. Задание со звездочкой* реализовать дополнительно пакет через docker
+В чат ДЗ отправьте ссылку на ваш git-репозиторий . Обычно мы проверяем ДЗ в течение 48 часов.
+Если возникнут вопросы, обращайтесь к студентам, преподавателям и наставникам в канал группы в Slack.
+Удачи при выполнении!
+
+<details>
+	<summary>
+		1. Cоздать свой RPM
+	</summary>
+	
+Сборку своего RPM будем производить на ВМ Centos 8. Для начала установим набор утилит:
+
+	yum install -y redhat-lsb-core wget rpmdevtools rpm-build createrepo yum-utils gcc
+	
+Создал дерево каталогов для сборки:
+
+	[root@otuslesson ~]# rpmdev-setuptree
+
+	[root@otuslesson ~]# tree /root/rpmbuild/
+	/root/rpmbuild/
+	├── BUILD
+	├── RPMS
+	├── SOURCES
+	├── SPECS
+	└── SRPMS
+
+	5 directories, 0 files
+	
+Для примера возьмём пакет NGINX и соберем его с поддержкой протокола HTTPS
+
+Загрузим SRPM пакет NGINX для дальнейшей сборки:
+
+	[root@otuslesson ~]# wget https://nginx.org/packages/centos/8/SRPMS/nginx-1.22.1-1.el8.ngx.src.rpm
+	
+Установим пакет:
+
+	[root@otuslesson ~]# rpm -Uvh nginx-1.22.1-1.el8.ngx.src.rpm
+
+Установим заранее все зависимости:
+
+	[root@otuslesson ~]# yum-builddep rpmbuild/SPECS/nginx.spec
+	
+Теперь поправим наш SPEC файл
+
+	%build
+	./configure %{BASE_CONFIGURE_ARGS} \
+	    --with-cc-opt="%{WITH_CC_OPT}" \
+	    --with-ld-opt="%{WITH_LD_OPT}" \
+	    --with-debug \
+	    --with-http_ssl_module  <--- мы добавили эту строку
+	    
+Теперь соберем пакет:
+
+	[root@otuslesson ~]# rpmbuild -bb rpmbuild/SPECS/nginx.spec
+	
+	####### A FEW MOMENTS LATER #######
+	
+	Requires(rpmlib): rpmlib(CompressedFileNames) <= 3.0.4-1 rpmlib(FileDigests) <= 4.6.0-1 rpmlib(PayloadFilesHavePrefix) <= 4.0-1
+	Checking for unpackaged file(s): /usr/lib/rpm/check-files /root/rpmbuild/BUILDROOT/nginx-1.22.1-1.el8.ngx.x86_64
+	Wrote: /root/rpmbuild/RPMS/x86_64/nginx-1.22.1-1.el8.ngx.x86_64.rpm
+	Wrote: /root/rpmbuild/RPMS/x86_64/nginx-debuginfo-1.22.1-1.el8.ngx.x86_64.rpm
+	Executing(%clean): /bin/sh -e /var/tmp/rpm-tmp.8ezpAF
+	+ umask 022
+	+ cd /root/rpmbuild/BUILD
+	+ cd nginx-1.22.1
+	+ /usr/bin/rm -rf /root/rpmbuild/BUILDROOT/nginx-1.22.1-1.el8.ngx.x86_64
+	+ exit 0
+	
+Проверяем что все собралось:
+
+
+	[root@otuslesson ~]# tree rpmbuild/
+	......
+	├── BUILDROOT
+	├── RPMS
+	│   └── x86_64
+	│       ├── nginx-1.22.1-1.el8.ngx.x86_64.rpm
+	│       └── nginx-debuginfo-1.22.1-1.el8.ngx.x86_64.rpm
+	├── SOURCES
+	│   ├── logrotate
+	│   ├── nginx-1.22.1.tar.gz
+	│   ├── nginx.check-reload.sh
+	│   ├── nginx.conf
+	│   ├── nginx.copyright
+	│   ├── nginx-debug.service
+	│   ├── nginx.default.conf
+	│   ├── nginx.service
+	│   ├── nginx.suse.logrotate
+	│   └── nginx.upgrade.sh
+	├── SPECS
+	│   └── nginx.spec
+	└── SRPMS
+
+
+Установим наш локальный пакет:
+
+	[root@otuslesson x86_64]# yum localinstall -y nginx-1.22.1-1.el8.ngx.x86_64.rpm
+	
+Запустим и проверим статус:
+
+	[root@otuslesson x86_64]# systemctl start nginx
+	[root@otuslesson x86_64]# systemctl status nginx
+	● nginx.service - nginx - high performance web server
+	   Loaded: loaded (/usr/lib/systemd/system/nginx.service; disabled; vendor preset: disabled)
+	   Active: active (running) since Sun 2023-01-29 20:26:12 UTC; 13s ago
+	     Docs: http://nginx.org/en/docs/
+	  Process: 39760 ExecStart=/usr/sbin/nginx -c /etc/nginx/nginx.conf (code=exited, status=0/SUCCESS)
+	 Main PID: 39761 (nginx)
+	    Tasks: 3 (limit: 24912)
+	   Memory: 3.0M
+	   CGroup: /system.slice/nginx.service
+		   ├─39761 nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf
+		   ├─39762 nginx: worker process
+		   └─39763 nginx: worker process
+
+	Jan 29 20:26:12 otuslesson.02 systemd[1]: Starting nginx - high performance web server...
+	Jan 29 20:26:12 otuslesson.02 systemd[1]: Started nginx - high performance web server.
+	[root@otuslesson x86_64]# 
+
+	    
 
 </details>
