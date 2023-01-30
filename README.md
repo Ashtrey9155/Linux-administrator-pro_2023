@@ -1010,7 +1010,8 @@ Vagrant file:
 	success
 	[root@server ~]# firewall-cmd --permanent --zone=public --add-service=rpc-bind
 	success
-	[root@server ~]# 
+	[root@server ~]# firewall-cmd --permanent --add-port=2049/udp
+success
 	[root@server ~]# firewall-cmd --reload
 	success
 	
@@ -1044,8 +1045,12 @@ Vagrant file:
 
 На стороне клиента проверил командой mount -a 
 	
+	TCP
 	[root@client ~]# mount | grep /mnt
 	192.168.56.41:/srv/share on /mnt type nfs4 (rw,relatime,sync,vers=4.1,rsize=131072,wsize=131072,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,clientaddr=192.168.56.42,local_lock=none,addr=192.168.56.41)
+	UDP
+	[root@client ~]# mount | grep /mnt
+	192.168.56.41:/srv/share/ on /mnt type nfs (rw,relatime,sync,vers=3,rsize=32768,wsize=32768,namlen=255,hard,proto=udp,timeo=11,retrans=3,sec=sys,mountaddr=192.168.56.41,mountvers=3,mountport=20048,mountproto=udp,local_lock=none,addr=192.168.56.41)
 	
 Проверяем что монтирование директории прошло удачно и возможно создать файлы на обоих сторонах:
 	
