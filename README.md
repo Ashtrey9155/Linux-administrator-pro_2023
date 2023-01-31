@@ -1427,7 +1427,109 @@ success
 	Jan 29 20:26:12 otuslesson.02 systemd[1]: Starting nginx - high performance web server...
 	Jan 29 20:26:12 otuslesson.02 systemd[1]: Started nginx - high performance web server.
 	[root@otuslesson x86_64]# 
+	
+	
+</details>
 
-	    
+<details>
+	<summary>
+		2. Cоздать свой репо и разместить там свой RPM
+	</summary>
+	
+В каталоге NGINX создал дирикторию repo, скопировал туда свои репо-файлы, а так же еще один из домашки по ссылке. И инициировал репозиторий командой:
+	
+	[root@otuslesson nginx]# createrepo /usr/share/nginx/html/repo/
+	Directory walk started
+	Directory walk done - 3 packages
+	Temporary output repo path: /usr/share/nginx/html/repo/.repodata/
+	Preparing sqlite DBs
+	Pool started (with 5 workers)
+	Pool finished
+	[root@otuslesson nginx]# 
+	
+По заданию настроили прозрачность листинга каталога:
+	
+	[root@otuslesson nginx]# cat /etc/nginx/conf.d/default.conf 
+	server {
+	    listen       80;
+	    server_name  localhost;
+
+	    #access_log  /var/log/nginx/host.access.log  main;
+
+	    location / {
+		root   /usr/share/nginx/html;
+		index  index.html index.htm;
+		autoindex on;
+	    }
+	
+Тепереь проверим сонфиг и перезапкстим NGONX:
+	
+	[root@otuslesson nginx]# nginx -t
+	nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+	nginx: configuration file /etc/nginx/nginx.conf test is successful
+	[root@otuslesson nginx]# nginx -s reload
+	
+Проверяем с помощью утилиты Curl доступность репо по ссылке:
+	
+	[root@otuslesson nginx]# curl -a http://localhost/repo/
+	<html>
+	<head><title>Index of /repo/</title></head>
+	<body>
+	<h1>Index of /repo/</h1><hr><pre><a href="../">../</a>
+	<a href="repodata/">repodata/</a>                                          31-Jan-2023 13:24                   -
+	<a href="nginx-1.22.1-1.el8.ngx.x86_64.rpm">nginx-1.22.1-1.el8.ngx.x86_64.rpm</a>                  30-Jan-2023 22:11              847380
+	<a href="nginx-debuginfo-1.22.1-1.el8.ngx.x86_64.rpm">nginx-debuginfo-1.22.1-1.el8.ngx.x86_64.rpm</a>        30-Jan-2023 22:11             2400168
+	<a href="percona-orchestrator-3.2.6-2.el8.x86_64.rpm">percona-orchestrator-3.2.6-2.el8.x86_64.rpm</a>        16-Feb-2022 15:57             5222976
+	</pre><hr></body>
+	</html>
+	
+Проверим в работе:
+	
+	[root@otuslesson nginx]# cat /etc/yum.repos.d/otuslearn.repo
+	[otuslearn]
+	name=otuslearn-linux
+	baseurl=http://localhost/repo
+	gpgcheck=0
+	enabled=1
+	[root@otuslesson nginx]# 
+
+	[root@otuslesson nginx]# yum repolist enabled | grep otus
+	otuslearn                       otuslearn-linux
+	
+	[root@otuslesson nginx]# yum list | grep otus
+	otuslearn-linux                                 1.3 MB/s | 3.3 kB     00:00  
+	percona-orchestrator.x86_64                            2:3.2.6-2.el8                                          otuslearn 
+	 
+	[root@otuslesson nginx]# yum install nginx
+	Last metadata expiration check: 0:01:07 ago on Tue 31 Jan 2023 01:39:50 PM UTC.
+	Package nginx-1:1.22.1-1.el8.ngx.x86_64 is already installed.
+	Dependencies resolved.
+	Nothing to do.
+	Complete!
+
+	[root@otuslesson nginx]# yum install percona-orchestrator.x86_64
+	Last metadata expiration check: 0:02:24 ago on Tue 31 Jan 2023 01:39:50 PM UTC.
+	Dependencies resolved.
+	============================================================================================================================================================================================================
+	 Package                                                  Architecture                               Version                                            Repository                                     Size
+	============================================================================================================================================================================================================
+	Installing:
+	 percona-orchestrator                                     x86_64                                     2:3.2.6-2.el8                                      otuslearn                                     5.0 M
+	Installing dependencies:
+	 jq                                                       x86_64                                     1.5-12.el8                                         appstream                                     161 k
+	 oniguruma                                                x86_64                                     6.8.2-2.el8                                        appstream                                     187 k
+
+	Transaction Summary
+	============================================================================================================================================================================================================
+	Install  3 Packages
+
+	Total download size: 5.3 M
+	Installed size: 17 M
+	Is this ok [y/N]: 
+	
+	Видим, что нам предлагается установить пакет из нашего локального репозитория
+	
 
 </details>
+	
+Можно было бы вытащить NGINX наружу, но мой сервер за НАТ (вопрос решился DyDSN), сервер на Ubuntu на нем вируталка и вот на виртуалке NGINX. Делать проброс через 2 хоста как то не хочется, если нужно, могу поднять NGINX на Ubuntu.
