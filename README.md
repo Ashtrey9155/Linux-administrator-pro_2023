@@ -5,7 +5,7 @@
 - #### <a href="#linux-administrator-_-lesson-3-1">Linux Administrator _ Lesson #3</a>
 - #### <a href="#linux-administrator-_-lesson-4-1">Linux Administrator _ Lesson #4</a>
 - #### <a href="#linux-administrator-_-lesson-5-1">Linux Administrator _ Lesson #5</a>
-- #### <a href="#linux-administrator-_-lesson-5-1">Linux Administrator _ Lesson #6</a>
+- #### <a href="#linux-administrator-_-lesson-6-1">Linux Administrator _ Lesson #6</a>
 
 ## Linux Administrator _ Lesson #3
 
