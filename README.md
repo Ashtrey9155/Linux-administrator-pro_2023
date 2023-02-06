@@ -1850,7 +1850,9 @@ PV необходимо инициализировать с параметром
 		2. Из репозитория epel установить spawn-fcgi и переписать init-скрипт на unit-файл
 	</summary>
 	
-Устанавливаем spawn-fcgi и необходимые для него пакеты: [root@otuslesson yum.repos.d]# yum install epel-release -y && yum install spawn-fcgi php php-cli mod_fcgid httpd -y
+Устанавливаем spawn-fcgi и необходимые для него пакеты: 
+	
+	[root@otuslesson yum.repos.d]# yum install epel-release -y && yum install spawn-fcgi php php-cli mod_fcgid httpd -y
 	
 [root@otuslesson yum.repos.d]# cd /etc/rc.d/init.d/
 [root@otuslesson init.d]# ls
