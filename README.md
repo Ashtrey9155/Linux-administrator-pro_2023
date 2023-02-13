@@ -2040,8 +2040,11 @@ functions  README  spawn-fcgi
 В письме должен быть прописан обрабатываемый временной диапазон.
 	
 Начнем с выбора нужной информации
-1. Получим список всех IP адресов
-	
+
+<details>
+	<summary>
+		1. Получим список всех IP адресов
+	</summary>
 	[root@otuslesson ~]# cat access-4560-644067.log | cut -d ' ' -f 1 | uniq -c | sort -nr | head -n 10
 	     39 109.236.252.130
 	     36 212.57.117.19
@@ -2056,8 +2059,13 @@ functions  README  spawn-fcgi
 	[root@otuslesson ~]# 
 	
 	Получили ТОП 10
-	
-2. Список ссылок
+
+</details>
+
+<details>
+	<summary>
+		2. Список ссылок
+	</summary>
 	
 	[root@otuslesson ~]# cat access-4560-644067.log  | cut -d " " -f 11 | sort -n | uniq -c -d | sort -nr
 	    498 "-"
@@ -2079,9 +2087,19 @@ functions  README  spawn-fcgi
 	
 	Как можем заметить нам попались и пустые запросы
 	
-3. Ошибки обычно хранятся в errorlog, будем уточнять
+</details>
 	
-4. Список всех кодов HTTP ответа с указанием их кол-ва
+<details>
+	<summary>
+		3. Ошибки обычно хранятся в errorlog, будем уточнять
+	</summary>
+	
+</details>
+	
+<details>
+	<summary>
+		4. Список всех кодов HTTP ответа с указанием их кол-ва
+	</summary>
 	
 	[root@otuslesson ~]# cat access-4560-644067.log  | cut -d " " -f 9 | sort -n | uniq -c -d | sort -nr
 	    498 200
@@ -2092,3 +2110,5 @@ functions  README  spawn-fcgi
 	      3 500
 	      2 499
 	[root@otuslesson ~]# 
+
+</details>
