@@ -2045,6 +2045,7 @@ functions  README  spawn-fcgi
 	<summary>
 		1. Получим список всех IP адресов
 	</summary>
+	
 	[root@otuslesson ~]# cat access-4560-644067.log | cut -d ' ' -f 1 | uniq -c | sort -nr | head -n 10
 	     39 109.236.252.130
 	     36 212.57.117.19
