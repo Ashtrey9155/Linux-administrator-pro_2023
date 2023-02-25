@@ -2113,3 +2113,138 @@ functions  README  spawn-fcgi
 	[root@otuslesson ~]# 
 
 </details>
+	
+	В итоге я собрал скрипт и запустил его через cron: * * * * * root /usr/bin/flock -w 600 /var/tmp/lesson09.lock /root/lesson09.sh
+	
+	```
+	
+		#!/bin/bash
+		#echo '0' > ./lastDate.txt
+		fileName="/root/access-4560-644067.log"
+		lastDateFile='./lastDate.txt'
+		outputFile='./outputFile.txt'
+
+
+		#Очистим файл
+		echo '' > $outputFile
+
+		function title {
+			echo '
+		############################################
+		####		' $1'
+		############################################
+		#count	#
+			' >> $outputFile
+		}
+
+		function getIpAddresses() {
+			title 'Топ ip адресов:'
+			sed -n $startCount',$p' $fileName | cut -d ' ' -f 1 | uniq -c | sort -nr | head -n 10 >> $outputFile
+			getUrls
+		}
+
+		function getUrls() {
+			title 'Топ URL'
+			sed -n $startCount',$p' $fileName  | cut -d " " -f 11 | sort -n | uniq -c -d | sort -nr >> $outputFile
+			getErrors
+		}
+
+		function getErrors() {
+			title 'Топ ошибок'
+			echo "This is not a error files" >> $outputFile
+			getCodes
+		}
+
+		function getCodes() {
+			title 'Топ кодов:'
+			sed -n $startCount',$p' $fileName  | cut -d " " -f 9 | sort -n | uniq -c -d | sort -nr >> $outputFile
+		}
+
+		############################################
+
+		function getLastDate() {
+			sed -n '$'p $fileName | cut -d ' ' -f 4 | cut -d '[' -f 2 > $lastDateFile
+		}
+
+		function getFirstDate() {
+			firstDate=$(sed -n "$startCount"p $fileName | cut -d ' ' -f 4 | cut -d '[' -f 2)
+			lastDate=$(sed -n '$'p $fileName | cut -d ' ' -f 4 | cut -d '[' -f 2)
+			title 'Отчет сформирован с '$firstDate' по '$lastDate
+		}
+
+		function readFromLastDate() {
+			if [ -f "$lastDateFile" ]; then
+				lastDate=$(<$lastDateFile)
+				startCount=$(cat $fileName | grep -n $lastDate | awk '{print $1}' | cut -d ':' -f 1)
+			else 
+				startCount=1
+			fi
+			echo $startCount
+			return $startCount
+		}
+
+		function sendEmail() {
+			sendmail ashtrey.a@gmail.com < $outputFile
+		}
+
+		startCount=$( readFromLastDate )
+
+		getFirstDate
+		getIpAddresses
+		getLastDate
+
+		sendEmail
+
+	
+	```
+	
+	Пример выполнения скрипта:
+	
+	[root@otuslesson ~]# cat outputFile.txt 
+
+
+	############################################
+	####		 Отчет сформирован с 14/Aug/2019:04:12:10 по 14/Aug/2019:05:17:39
+	############################################
+	#count	#
+
+
+	############################################
+	####		 Топ ip адресов:
+	############################################
+	#count	#
+
+	      3 165.22.19.102
+	      1 93.158.167.130
+	      1 93.158.167.130
+	      1 93.158.167.130
+	      1 87.250.233.75
+	      1 87.250.233.68
+	      1 87.250.233.120
+	      1 62.75.198.172
+	      1 200.33.155.30
+	      1 191.96.41.52
+
+	############################################
+	####		 Топ URL
+	############################################
+	#count	#
+
+	     14 "-"
+
+	############################################
+	####		 Топ ошибок
+	############################################
+	#count	#
+
+	This is not a error files
+
+	############################################
+	####		 Топ кодов:
+	############################################
+	#count	#
+
+	     10 200
+	      3 301
+	      2 404
+
