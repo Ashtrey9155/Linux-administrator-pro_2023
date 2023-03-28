@@ -9,6 +9,7 @@
 - #### <a href="#linux-administrator-_-lesson-7-1">Linux Administrator _ Lesson #7</a>
 - #### <a href="#linux-administrator-_-lesson-8-1">Linux Administrator _ Lesson #8</a>
 - #### <a href="#linux-administrator-_-lesson-9-1">Linux Administrator _ Lesson #9</a>
+- #### <a href="#linux-administrator-_-lesson-10-1">Linux Administrator _ Lesson #10</a>
 
 ## Linux Administrator _ Lesson #3
 
@@ -2248,3 +2249,245 @@ functions  README  spawn-fcgi
 	      3 301
 	      2 404
 
+
+## Linux Administrator _ Lesson #10
+	
+Домашнее задание
+	
+	Написать свою реализацию ps ax используя анализ /proc
+Результат ДЗ - рабочий скрипт который можно запустить
+	<details>
+	<summary>
+		Я использовал анализ превдо дириктории /proc для написания своего ps ax
+	</summary>
+	
+	Для вывода информации я написал отдельные библиотеки и подключил уже в исходном исполняемом файле
+	
+	[root@otuslesson ~]# ll
+	total 48
+	-rwxr-xr-x. 1 root root  413 Mar 28 21:47 forkps.sh
+	-rwxr-xr-x. 1 root root  247 Mar 28 20:57 getCommandName.sh
+	-rwxr-xr-x. 1 root root  242 Mar 28 21:42 getStat.sh
+	-rwxr-xr-x. 1 root root  949 Mar 28 21:28 getTotalCpu.sh
+	-rwxr-xr-x. 1 root root  597 Mar 28 15:59 getTTY.sh
+
+	[root@otuslesson ~]# cat getCommandName.sh
+	#!/bin/bash
+	function getCommand {
+		PID=$1
+
+		cmdline=$( cat /proc/$PID/cmdline 2>/dev/null | sed -e "s/\x00/ /g")
+
+		if [ -z "$cmdline" ]; then
+			cmdline="[$( cat /proc/$PID/status 2>/dev/null | grep Name | awk '{print $2}')]"
+		fi
+		echo  $cmdline
+	}
+
+		
+	[root@otuslesson ~]# cat getStat.sh 
+	#!/bin/bash
+	function getStat {
+		PID=$1
+
+		cmdline=$( cat /proc/$PID/cmdline 2>/dev/null | sed -e "s/\x00/ /g")
+
+		if [ "$PID" ]; then
+			statusName="$( cat /proc/$PID/status 2>/dev/null | grep State | awk '{print $2}')"
+		fi
+		echo  $statusName
+	}
+
+		
+	[root@otuslesson ~]# cat getTotalCpu.sh 
+	#!/bin/bash
+	function getCpu {
+	PID=$1
+	if [ -z "$PID" ]; then
+	    echo Usage: $0 PID
+	    exit 1
+	fi
+
+	PROCESS_STAT=($(sed -E 's/\([^)]+\)/X/' "/proc/$PID/stat" 2>/dev/null))
+
+	if [[ -z "$PROCESS_STAT" ]]; then
+		exit 1
+	fi
+	PROCESS_UTIME=${PROCESS_STAT[13]}
+	PROCESS_STIME=${PROCESS_STAT[14]}
+	PROCESS_STARTTIME=${PROCESS_STAT[21]}
+	SYSTEM_UPTIME_SEC=$(tr . ' ' </proc/uptime | awk '{print $1}')
+
+	CLK_TCK=$(getconf CLK_TCK)
+
+
+	if [[ $PROCESS_UTIME = '' ]]; then
+		echo '0:00'
+		exit 1
+	fi
+
+	let PROCESS_UTIME_SEC="$PROCESS_UTIME / $CLK_TCK"
+	let PROCESS_STIME_SEC="$PROCESS_STIME / $CLK_TCK"
+
+
+	let PROCESS_USAGE_SEC="$PROCESS_UTIME_SEC + $PROCESS_STIME_SEC"
+
+	function convertTime {
+		let "hh = $1 / 60"
+		mm=$(($1%60))
+		if (( "$mm" < 10 )); then 
+			mm="0${mm}" 
+		fi
+		#if (( "$hh" < 10 )); then 
+		#	hh="0${hh}" 
+		#fi
+		result="${hh}:${mm}"
+		echo $result
+	}
+
+	#echo Total CPU usage is ${PROCESS_USAGE_SEC}s
+	echo $( convertTime ${PROCESS_USAGE_SEC} )
+	}
+
+				 
+	[root@otuslesson ~]# cat getTTY.sh
+	#!/bin/bash
+	function getTTY {
+		PID=$1
+
+		if [ -z "$PID" ]; then
+			echo Usage: $0 PID
+			exit 1
+		fi
+
+		getTty=$(ls -l /proc/$PID/fd/0 2> /dev/null | awk '{print $NF}')
+
+		tty=$getTty
+
+		if [[ $tty =~ ^anon.+$ ]];
+			then
+				tty=$(echo anon)
+			fi
+
+		case $tty in
+			/dev/null) tty=$(echo "?");;
+			'' ) tty=$(echo "?");;
+			anon ) tty=$(echo "?") ;;
+			*) tty=$(echo $getTty | sed  's/\/dev\// /') ;;
+		esac
+
+		echo $tty
+	}
+		
+		
+	Запустим наш fork ps ax
+		
+	[root@otuslesson ~]# time ./forkps.sh 
+	PID      TTY      STAT  TIME    COMMAND
+	1         ?        S     0:21    /usr/lib/systemd/systemd --switched-root --system --deserialize 16 
+	2         ?        S     0:00    [kthreadd] 
+	3         ?        I     0:00    [rcu_gp] 
+	4         ?        I     0:00    [rcu_par_gp] 
+	6         ?        I     0:00    [kworker/0:0H-kblockd] 
+	9         ?        I     0:00    [mm_percpu_wq] 
+	10        ?        S     0:02    [ksoftirqd/0] 
+	11        ?        R     0:09    [rcu_sched] 
+	12        ?        S     0:00    [migration/0] 
+	13        ?        S     0:03    [watchdog/0] 
+	14        ?        S     0:00    [cpuhp/0] 
+	15        ?        S     0:00    [cpuhp/1] 
+	16        ?        S     0:01    [watchdog/1] 
+	17        ?        S     0:00    [migration/1] 
+	18        ?        S     0:00    [ksoftirqd/1] 
+	20        ?        I     0:00    [kworker/1:0H] 
+	23        ?        S     0:00    [kdevtmpfs] 
+	24        ?        I     0:00    [netns] 
+	25        ?        S     0:00    [kauditd] 
+	26        ?        S     0:00    [khungtaskd] 
+	27        ?        S     0:00    [oom_reaper] 
+	28        ?        I     0:00    [writeback] 
+	29        ?        S     0:00    [kcompactd0] 
+	30        ?        S     0:00    [ksmd] 
+	31        ?        S     0:16    [khugepaged] 
+	32        ?        I     0:00    [crypto] 
+	33        ?        I     0:00    [kintegrityd] 
+	34        ?        I     0:00    [kblockd] 
+	35        ?        I     0:00    [blkcg_punt_bio] 
+	36        ?        I     0:00    [tpm_dev_wq] 
+	37        ?        I     0:00    [md] 
+	38        ?        I     0:00    [edac-poller] 
+	39        ?        S     0:00    [watchdogd] 
+	40        ?        I     0:00    [pm_wq] 
+	56        ?        S     0:00    [kswapd0] 
+	149       ?        I     0:00    [kthrotld] 
+	150       ?        I     0:00    [acpi_thermal_pm] 
+	151       ?        I     0:00    [kmpath_rdacd] 
+	152       ?        I     0:00    [kaluad] 
+	154       ?        I     0:00    [ipv6_addrconf] 
+	155       ?        I     0:00    [kstrp] 
+	386       ?        I     0:00    [ata_sff] 
+	389       ?        S     0:00    [scsi_eh_0] 
+	392       ?        I     0:00    [scsi_tmf_0] 
+	394       ?        S     0:00    [scsi_eh_1] 
+	397       ?        I     0:00    [scsi_tmf_1] 
+	406       ?        I     0:33    [kworker/0:1H-kblockd] 
+	415       ?        I     0:11    [kworker/1:1H-kblockd] 
+	429       ?        I     0:00    [xfsalloc] 
+	430       ?        I     0:00    [xfs_mru_cache] 
+	433       ?        I     0:00    [xfs-buf/sda1] 
+	434       ?        I     0:00    [xfs-conv/sda1] 
+	435       ?        I     0:00    [xfs-cil/sda1] 
+	436       ?        I     0:00    [xfs-reclaim/sda] 
+	437       ?        I     0:00    [xfs-eofblocks/s] 
+	438       ?        I     0:00    [xfs-log/sda1] 
+	439       ?        S     0:55    [xfsaild/sda1] 
+	524       ?        S     0:06    /usr/lib/systemd/systemd-journald 
+	587       ?        S     0:02    /usr/bin/rpcbind -w -f 
+	588       ?        S     0:00    /sbin/auditd 
+	592       ?        I     0:00    [rpciod] 
+	593       ?        I     0:00    [kworker/u5:0] 
+	594       ?        I     0:00    [xprtiod] 
+	608       ?        S     0:08    /usr/lib/systemd/systemd-udevd 
+	629       ?        S     0:03    /usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only 
+	638       ?        S     2:38    /usr/sbin/irqbalance --foreground 
+	642       ?        S     0:00    /usr/lib/polkit-1/polkitd --no-debug 
+	644       ?        S     0:03    /usr/sbin/sssd -i --logger=files 
+	654       ?        S     0:43    /sbin/rngd -f --fill-watermark=0 
+	664       ?        S     0:04    /usr/sbin/chronyd 
+	714       ?        S     5:45    /usr/libexec/platform-python -Es /usr/sbin/tuned -l -P 
+	722       ?        S     0:00    /usr/sbin/gssproxy -D 
+	732       ?        S     0:21    /usr/libexec/sssd/sssd_be --domain implicit_files --uid 0 --gid 0 --logger=files 
+	735       ?        S     0:24    /usr/libexec/sssd/sssd_nss --uid 0 --gid 0 --logger=files 
+	736       ?        S     0:06    /usr/lib/systemd/systemd-logind 
+	739       ?        S     0:04    /usr/sbin/crond -n 
+	740       tty1     S     0:00    /sbin/agetty -o -p -- \u --noclear tty1 linux 
+	797       ?        S     0:00    /usr/sbin/sshd -D -u0 -oCiphers=aes256-gcm@openssh.com,chacha20-poly1305@openssh.com,aes256-ctr,aes256-cbc,aes128-gcm@openssh.com,aes128-ctr,aes128-cbc -oMACs=hmac-s
+	826       ?        S     2:36    /usr/sbin/rsyslogd -n 
+	3109      ?        S     0:54    /usr/sbin/NetworkManager --no-daemon 
+	178040    ?        I     0:05    [kworker/1:3-events] 
+	178076    ?        I     0:00    [kworker/u4:0-flush-8:0] 
+	178112    ?        S     0:00    sshd: vagrant [priv] 
+	178116    ?        S     0:00    /usr/lib/systemd/systemd --user 
+	178121    ?        S     0:00    (sd-pam) 
+	178129    ?        S     0:02    sshd: vagrant@pts/0 
+	178130    pts/0    S     0:00    -bash 
+	178155    pts/0    S     0:00    sudo -i 
+	178157    pts/0    S     0:00    -bash 
+	240541    ?        I     0:01    [kworker/1:1-events] 
+	254171    ?        I     0:00    [kworker/0:1-mm_percpu_wq] 
+	260080    ?        I     0:00    [kworker/0:0-events] 
+	260082    ?        I     0:00    [kworker/u4:1-events_unbound] 
+	266007    ?        I     0:00    [kworker/0:2-events] 
+	268942    pts/0    S     0:00    /bin/bash ./forkps.sh 
+	268943    ?                      [] 
+	268944    ?                      [] 
+	268945    ?                      [] 
+
+	real	0m2.129s
+	user	0m1.498s
+	sys	0m1.225s
+	[root@otuslesson ~]# 
+
+	Как можем заметить моя реализация работает медленнее оригинала.
+</details>
+	
