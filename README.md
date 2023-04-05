@@ -10,6 +10,7 @@
 - #### <a href="#linux-administrator-_-lesson-8-1">Linux Administrator _ Lesson #8</a>
 - #### <a href="#linux-administrator-_-lesson-9-1">Linux Administrator _ Lesson #9</a>
 - #### <a href="#linux-administrator-_-lesson-10-1">Linux Administrator _ Lesson #10</a>
+- #### <a href="#linux-administrator-_-lesson-11-1">Linux Administrator _ Lesson #11</a>
 
 ## Linux Administrator _ Lesson #3
 
@@ -2491,3 +2492,82 @@ functions  README  spawn-fcgi
 	Как можем заметить моя реализация работает медленнее оригинала.
 </details>
 	
+## Linux Administrator _ Lesson #11
+	
+Домашнее задание
+	Первые шаги с Ansible
+- необходимо использовать модуль yum/apt;
+- конфигурационные файлы должны быть взяты из шаблона jinja2 с перемененными;
+- после установки nginx должен быть в режиме enabled в systemd;
+- должен быть использован notify для старта nginx после установки;
+- сайт должен слушать на нестандартном порту - 8080, для этого использовать переменные в Ansible.
+	
+<details>
+	<summary>
+		Сначала я написал свой первый playbook, а позже переделал его в роли
+	</summary>
+	По ссылке ниже попадете на GIT со всем содержимым
+	https://github.com/Ashtrey9155/Linux-administrator-pro_2023/tree/main/lesson_11_ansible
+	
+	В доказательство листинг отработанного скрипта:
+	
+	ashtrey@otuslearn:~/less_11_ansible$ ansible-playbook playbooks/play.yml
+
+	PLAY [NGINX | Install and configure NGINX] **************************************************************************************************************
+
+	TASK [Gathering Facts] **********************************************************************************************************************************
+	ok: [nginx]
+
+	TASK [epel : NGINX | Install EPEL Repo package from standart repo] **************************************************************************************
+	ok: [nginx]
+
+	TASK [nginx : NGINX | Install NGINX package from EPEL Repo] *********************************************************************************************
+	ok: [nginx]
+
+	TASK [nginx : NGINX | Create NGINX config file from temlate] ********************************************************************************************
+	ok: [nginx]
+
+	PLAY RECAP **********************************************************************************************************************************************
+	nginx                      : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+	ashtrey@otuslearn:~/less_11_ansible$ 
+	
+	
+	Доступный NGINX по 8080 порту:
+	
+	ashtrey@otuslearn:~/less_11_ansible$ curl http://192.168.56.111:8080
+	<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+	<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+	    <head>
+		<title>Test Page for the Nginx HTTP Server on Red Hat Enterprise Linux</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<style type="text/css">
+		    /*<![CDATA[*/
+		    body {
+			background-color: #fff;
+			color: #000;
+			font-size: 0.9em;
+			font-family: sans-serif,helvetica;
+			margin: 0;
+			padding: 0;
+		    }
+		    :link {
+		    
+		   <!-- далее портянка html -->
+		   
+	И статус NGINX по запрусу через Ansible:
+	
+	ashtrey@otuslearn:~/less_11_ansible$ ansible nginx -m systemd -a name=nginx
+	nginx | SUCCESS => {
+	    "ansible_facts": {
+		"discovered_interpreter_python": "/usr/libexec/platform-python"
+	    },
+	    "changed": false,
+	    "name": "nginx",
+	    "status": {
+		"ActiveEnterTimestamp": "Wed 2023-04-05 19:11:12 UTC",
+		"ActiveEnterTimestampMonotonic": "22485276489",
+		"ActiveExitTimestampMonotonic": "0",
+		"ActiveState": "active",
+</details>
