@@ -1,0 +1,43 @@
+# Описываем Виртуальные машины
+MACHINES = {
+  # Указываем имя ВМ "kernel update"
+  :"otuslesson.11" => {
+              #Какой vm box будем использовать
+              :box_name => "centos/8",
+              :ip_addr => '192.168.56.111',
+              #Указываем количество ядер ВМ
+              :cpus => 2,
+              #Указываем количество ОЗУ в мегабайтах
+              :memory => 4096,
+            }
+}
+
+Vagrant.configure("2") do |config|
+  MACHINES.each do |boxname, boxconfig|
+    # Отключаем проброс общей папки в ВМ
+    config.vm.synced_folder ".", "/vagrant", disabled: true
+    config.vm.network "forwarded_port", guest: 8080, host: 8080
+    # Применяем конфигурацию ВМ
+    config.vm.define boxname do |box|
+      box.vm.box = boxconfig[:box_name]
+      box.vm.host_name = boxname.to_s
+      box.vm.network "private_network", ip: boxconfig[:ip_addr]
+
+      box.vm.provider "virtualbox" do |vb|
+        vb.memory = boxconfig[:memory]
+        vb.cpus = boxconfig[:cpus]
+
+      end
+
+	box.vm.provision "shell", inline: <<-SHELL
+            sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
+            sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
+	    mkdir -p ~root/.ssh; cp ~vagrant/.ssh/auth* ~root/.ssh
+            sed -i '65s/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+            systemctl restart sshd
+          SHELL
+
+    end
+  end
+end
+
