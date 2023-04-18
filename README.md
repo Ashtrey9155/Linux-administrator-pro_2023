@@ -12,6 +12,7 @@
 - #### <a href="#linux-administrator-_-lesson-10-1">Linux Administrator _ Lesson #10</a>
 - #### <a href="#linux-administrator-_-lesson-11-1">Linux Administrator _ Lesson #11</a>
 - #### <a href="#linux-administrator-_-lesson-12-1">Linux Administrator _ Lesson #12</a>
+- #### <a href="#linux-administrator-_-lesson-13-1">Linux Administrator _ Lesson #13</a>
 
 ## Linux Administrator _ Lesson #3
 
@@ -2990,4 +2991,177 @@ functions  README  spawn-fcgi
 	
 	Видим что добавилась А запись, мы сделали все верно.
 
+</details>
+
+
+
+
+## Linux Administrator _ Lesson #12
+	
+ Домашнее задание
+	1. Написать Dockerfile на базе apache/nginx который будет содержать две статичные web-страницы на разных портах. Например, 80 и 3000.
+	2. Пробросить эти порты на хост машину. Обе страницы должны быть доступны по адресам localhost:80 и localhost:3000
+	3. Добавить 2 вольюма. Один для логов приложения, другой для web-страниц.
+	
+	Доп.*
+	1. Написать Docker-compose для приложения Redmine, с использованием опции build.
+	2. Добавить в базовяй образ redmine любую кастомную тему оформления.
+	3. Убедиться что после сборки новая тема доступна в настройках.
+	
+<details>
+	<summary>
+		Начнем с того, напишем свой Docker файл для запуска nginx
+	</summary>
+	
+	Сам Docerfile:
+	
+		FROM nginx:latest
+
+		COPY 3000.conf /etc/nginx/conf.d/
+
+		COPY index.html /usr/share/nginx/html/
+
+		COPY index_3000.html /usr/share/nginx_3000/html/index.html
+
+		VOLUME /usr/share/nginx/html
+
+		VOLUME /etc/nginx
+		
+	Индексные файлы смотреть не интересно, а вот на конфиг взглянем:
+	
+		server {
+		    listen       3000;
+		    listen  [::]:3000;
+		    server_name  localhost;
+
+		    #access_log  /var/log/nginx/host.access.log  main;
+
+		    location / {
+			root   /usr/share/nginx_3000/html;
+			index  index.html index.htm;
+		    }
+
+		    #error_page  404              /404.html;
+
+		    # redirect server error pages to the static page /50x.html
+		    #
+		    error_page   500 502 503 504  /50x.html;
+		    location = /50x.html {
+			root   /usr/share/nginx_3000/html;
+		 }
+		 
+	Видим что порт прослушивается 3000 и другой путь к фалам виртуального хоста
+	
+	Сбилдим наш контейнер:
+	
+		root@otuslearn:/home/ashtrey/less_13_docker# docker build -t nginx-only .
+		[+] Building 2.4s (9/9) FINISHED                                                                                                                                                                      
+		 => [internal] load build definition from Dockerfile                                                                                                                                             0.5s
+		 => => transferring dockerfile: 241B                                                                                                                                                             0.0s
+		 => [internal] load .dockerignore                                                                                                                                                                0.3s
+		 => => transferring context: 2B                                                                                                                                                                  0.0s
+		 => [internal] load metadata for docker.io/library/nginx:latest                                                                                                                                  1.4s
+		 => [1/4] FROM docker.io/library/nginx:latest@sha256:63b44e8ddb83d5dd8020327c1f40436e37a6fffd3ef2498a6204df23be6e7e94                                                                            0.0s
+		 => [internal] load build context                                                                                                                                                                0.3s
+		 => => transferring context: 96B                                                                                                                                                                 0.0s
+		 => CACHED [2/4] COPY 3000.conf /etc/nginx/conf.d/                                                                                                                                               0.0s
+		 => CACHED [3/4] COPY index.html /usr/share/nginx/html/                                                                                                                                          0.0s
+		 => CACHED [4/4] COPY index_3000.html /usr/share/nginx_3000/html/index.html                                                                                                                      0.0s
+		 => exporting to image                                                                                                                                                                           0.1s
+		 => => exporting layers                                                                                                                                                                          0.0s
+		 => => writing image sha256:6d16b2015974f9e42a68e0dfd425c76aab5feae1060022eef99c6bfd8689b8f7                                                                                                     0.1s
+		 => => naming to docker.io/library/nginx-only  
+
+	И запустим с пробросом наших портов:
+	
+		root@otuslearn:/home/ashtrey/less_13_docker# docker run -d -p 80:80 -p 3000:3000 nginx-only
+		0c9be4c9002f0a37c80464cdcf3364897a1e280af9723d8b1c7cd39637dbf859
+		root@otuslearn:/home/ashtrey/less_13_docker# 
+
+	Да, и посмотрим куда пробросились наши вольюмы:
+	
+	root@otuslearn:/home/ashtrey/less_13_docker# docker volume ls
+		DRIVER    VOLUME NAME
+		local     2b00eb18f434ad3c6ab762fa190bf454213eb7d8e532d47e63eb50fcc9736728
+		local     02c6e596e12d8118ebd9120bc80ff7d12d96db864cc19d3e584e8cf805116d62
+		local     3bcc19ce70e7289629486133cc5a9582bd17ef1bf8abf760baec19966219cdf5
+		local     06dc07e24e51b51438a5b3e57b4357d1fe4bea9406db575437960b827864522b
+		local     13b3fba9405871deeb21b79e4d2507c8703f70b2ead9d41750d17d9894855a7e
+		local     16f7005f5eff3cb3e38aac36464a50278ac99f828a0be72da72116e5d364e0c2
+		local     18b1e10c6ef501ee505d4b6019cc847ac91b06b3e6dc1d09b6fd7ef3dd021884
+		local     82e52c83778c671fa78b365f9e32ed8a58f1dceb4c7d4a1f30c272b590b07cb3
+		local     5422ab9dbf6d22e9627f033d42cbbcfd2b672f3726850878b5c2d6e569a75511
+		local     172655ca9e9e908b34b9774f62d30bd0f6266f67e7368ff94a17799434539a48
+		local     1250718e5b718a1259393427ffe0e90ebf3391613f8cc04c636bca4331e58aa4
+		local     58977306d127700694009c2c9ffa9526c93a3886b6a13cb96695e24ee33554f7
+		local     bfd7b70ad39497b5d135414f50e6bcd4ed3ed87d70aa7bfc828f0aa91ad1b691
+		local     d3f25fffde5162236d891e219a3ca9ac5812647974181ac091f5b11fa3c6b6a0
+		root@otuslearn:/home/ashtrey/less_13_docker# 
+		
+	Ух как много, а это потому что я не удалял их после предыдущих попыток
+	
+	Нам нужны только эти:
+	
+		root@otuslearn:/home/ashtrey/less_13_docker# docker inspect 0c9be4c9002f | grep volume
+                "Type": "volume",
+                "Source": "/var/lib/docker/volumes/16f7005f5eff3cb3e38aac36464a50278ac99f828a0be72da72116e5d364e0c2/_data",
+                "Type": "volume",
+                "Source": "/var/lib/docker/volumes/172655ca9e9e908b34b9774f62d30bd0f6266f67e7368ff94a17799434539a48/_data",
+
+	Остальные мы удалим и останутся только:
+	
+		root@otuslearn:/home/ashtrey/less_13_docker# docker volume ls
+		DRIVER    VOLUME NAME
+		local     16f7005f5eff3cb3e38aac36464a50278ac99f828a0be72da72116e5d364e0c2
+		local     172655ca9e9e908b34b9774f62d30bd0f6266f67e7368ff94a17799434539a48
+		root@otuslearn:/home/ashtrey/less_13_docker# 
+		
+	Осталось проверить доступность по портам:
+	
+	root@otuslearn:/home/ashtrey/less_13_docker# curl localhost 
+		<!DOCTYPE html>
+		<html>
+		<head>
+		<title>Welcome to nginx!</title>
+		<style>
+		html { color-scheme: light dark; }
+		body { width: 35em; margin: 0 auto;
+		font-family: Tahoma, Verdana, Arial, sans-serif; }
+		</style>
+		</head>
+		<body>
+		<h1>Welcome to nginx!</h1>
+		<p>If you see this page, it is work on 80 port. Viva Otus!
+		Otus learn on page
+		<a href="http://otus.ru/">otus page</a>.</p>
+
+		<p><em>Thank you for using nginx.</em></p>
+		</body>
+		</html>
+		root@otuslearn:/home/ashtrey/less_13_docker# 
+		
+		
+		root@otuslearn:/home/ashtrey/less_13_docker# curl localhost:3000
+		<!DOCTYPE html>
+		<html>
+		<head>
+		<title>Welcome to nginx!</title>
+		<style>
+		html { color-scheme: light dark; }
+		body { width: 35em; margin: 0 auto;
+		font-family: Tahoma, Verdana, Arial, sans-serif; }
+		</style>
+		</head>
+		<body>
+		<h1>Welcome to nginx!</h1>
+		<p>If you see this page, it is work on 3000 port. Viva Otus!
+		Otus learn on page
+		<a href="http://otus.ru/">otus page</a>.</p>
+
+		<p><em>Thank you for using nginx.</em></p>
+		</body>
+		</html>
+		root@otuslearn:/home/ashtrey/less_13_docker# 
+
+	Все прекрасно работает!!!
 </details>
