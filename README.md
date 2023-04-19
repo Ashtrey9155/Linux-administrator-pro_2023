@@ -3166,3 +3166,44 @@ functions  README  spawn-fcgi
 
 	Все прекрасно работает!!!
 </details>
+
+<details>
+	<summary>
+		Задание со звездочкой
+	</summary>
+
+	Не знаю на сколько все верно я понял, но я создал yml файл, запустил, уменя собрался redmine и mysql и нормально добавилась тема, пример рабочий можно посмотреть по адресу http://64310572bb14.sn.mynetname.net:3000/   admin/12345678
+	Тема называется bleucleir
+
+	Docker-compose.yml
+
+	version: '2.17'
+	services:
+	  redmine:
+	    build: .
+	    image: redmine
+	    restart: always
+	    ports:
+	      - "8080:3000"
+	    depends_on:
+	      - db
+	    environment:
+	      REDMINE_DB_MYSQL: db
+	      REDMINE_DB_PASSWORD: 12345
+	      REDMINE_SECRET_KEY_BASE: supersecretkey
+	  db:
+	    image: mysql:5.7
+	    restart: always
+	    environment:
+	      MYSQL_ROOT_PASSWORD: 12345
+	      MYSQL_DATABASE: redmine
+
+
+	Dockerfile
+
+	FROM redmine
+	COPY public/themes/bleuclair public/themes/bleuclair
+
+
+	В корне директории лежит тема, которая закидывается во время сборки
+</details>
