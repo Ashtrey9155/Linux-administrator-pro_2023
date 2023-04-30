@@ -13,7 +13,7 @@
 - #### <a href="#linux-administrator-_-lesson-11-1">Linux Administrator _ Lesson #11</a>
 - #### <a href="#linux-administrator-_-lesson-12-1">Linux Administrator _ Lesson #12</a>
 - #### <a href="#linux-administrator-_-lesson-13-1">Linux Administrator _ Lesson #13</a>
-- #### <a href="#linux-administrator-_-lesson-13-1">Linux Administrator _ Lesson #14</a>
+- #### <a href="#linux-administrator-_-lesson-14-1">Linux Administrator _ Lesson #14</a>
 
 ## Linux Administrator _ Lesson #3
 
