@@ -13,6 +13,7 @@
 - #### <a href="#linux-administrator-_-lesson-11-1">Linux Administrator _ Lesson #11</a>
 - #### <a href="#linux-administrator-_-lesson-12-1">Linux Administrator _ Lesson #12</a>
 - #### <a href="#linux-administrator-_-lesson-13-1">Linux Administrator _ Lesson #13</a>
+- #### <a href="#linux-administrator-_-lesson-13-1">Linux Administrator _ Lesson #14</a>
 
 ## Linux Administrator _ Lesson #3
 
@@ -3206,4 +3207,31 @@ functions  README  spawn-fcgi
 
 
 	В корне директории лежит тема, которая закидывается во время сборки
+</details>
+
+## Linux Administrator _ Lesson #14
+	
+ Домашнее задание:
+
+	1. Настроить дашборд с 4-мя графиками
+
+		- память;
+		- процессор;
+		- диск;
+		- сеть
+	
+	2. Настроить на одной из систем:
+		zabbix (использовать screen (комплексный экран);
+		prometheus - grafana.
+	
+<details>
+	<summary>
+		Настравивать мониторинг я решил на prometheus - grafana, сборщиком метрик выступил node-explorer
+	</summary>
+
+		Для решения данной задачи я установить стек из контейнеров на виртуальной машине, для этого написал docker-compose.yml
+	После установки получил работающий Prometheus и Grafana. Но графики не строились, погуглив что не так, выяснил что прометей не собирает логи, я 	подключил таргет node-explorer и все заработало.
+		Пример рабочего Прометея по ссылке http://64310572bb14.sn.mynetname.net:3000 
+	login:pass - admin:grafana
+	Скриншот и файлы прикрепляю
 </details>
