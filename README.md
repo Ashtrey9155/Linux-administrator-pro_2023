@@ -14,6 +14,7 @@
 - #### <a href="#linux-administrator-_-lesson-12-1">Linux Administrator _ Lesson #12</a>
 - #### <a href="#linux-administrator-_-lesson-13-1">Linux Administrator _ Lesson #13</a>
 - #### <a href="#linux-administrator-_-lesson-14-1">Linux Administrator _ Lesson #14</a>
+- #### <a href="#linux-administrator-_-lesson-15-1">Linux Administrator _ Lesson #15</a>
 
 ## Linux Administrator _ Lesson #3
 
@@ -3234,4 +3235,101 @@ functions  README  spawn-fcgi
 		Пример рабочего Прометея по ссылке http://64310572bb14.sn.mynetname.net:3000 
 	login:pass - admin:grafana
 	Скриншот и файлы прикрепляю
+</details>
+
+## Linux Administrator _ Lesson #15
+	
+ Домашнее задание:
+
+	Описание домашнего задания
+	1. В Vagrant разворачиваем 2 виртуальные машины web и log
+	2. на web настраиваем nginx
+	3. на log настраиваем центральный лог сервер на любой системе на выбор
+	journald;
+	rsyslog;
+	elk.
+	4. настраиваем аудит, следящий за изменением конфигов nginx 
+
+	Все критичные логи с web должны собираться и локально и удаленно.
+	Все логи с nginx должны уходить на удаленный сервер (локально только критичные).
+	Логи аудита должны также уходить на удаленную систему.
+
+	Формат сдачи ДЗ - vagrant + ansible
+
+	Дополнительное задание
+	развернуть еще машину с elk
+	таким образом настроить 2 центральных лог системы elk и какую либо еще;
+	в elk должны уходить только логи нжинкса;
+	во вторую систему все остальное.
+
+	Статус "Принято" ставится, если присылаете логи скриншоты без вагранта.
+
+	Задание со звездочкой  выполняется по желанию.
+
+	
+<details>
+	<summary>
+		Основное задание
+	</summary>
+
+	Для начала создадим Vagrantfile и запустим дву виртуалные машины
+
+	ashtrey@otuslearn:~/less_15_logs$ vboxmanage list vms
+	"less_15_logs_web_1683466979961_51713" {81b849f3-3c01-4019-a3f5-6920e56b1616}
+	"less_15_logs_log_1683467073122_93308" {17abea65-efa9-4e47-b205-885bc82fffa4}
+
+	Настроеный аудит работает только при наличии файла в директории /var/log/audit/audit.log, как следствие он собирается локально и транслируется на удаленный сервер.
+
+	Лог на WEB
+
+	[root@web audit]# cat audit.log 
+	node=web type=DAEMON_START msg=audit(1683477044.246:4167): op=start ver=2.8.5 format=raw kernel=3.10.0-1127.el7.x86_64 auid=4294967295 pid=1652 uid=0 ses=4294967295 subj=system_u:system_r:auditd_t:s0 res=success
+	node=web type=CONFIG_CHANGE msg=audit(1683477044.404:1551): auid=4294967295 ses=4294967295 subj=system_u:system_r:unconfined_service_t:s0 op=remove_rule key="nginx_conf" list=4 res=1
+	node=web type=CONFIG_CHANGE msg=audit(1683477044.404:1552): auid=4294967295 ses=4294967295 subj=system_u:system_r:unconfined_service_t:s0 op=remove_rule key="nginx_conf" list=4 res=1
+	node=web type=CONFIG_CHANGE msg=audit(1683477044.410:1553): audit_backlog_limit=8192 old=8192 auid=4294967295 ses=4294967295 subj=system_u:system_r:unconfined_service_t:s0 res=1
+	node=web type=CONFIG_CHANGE msg=audit(1683477044.410:1554): audit_failure=1 old=1 auid=4294967295 ses=4294967295 subj=system_u:system_r:unconfined_service_t:s0 res=1
+	node=web type=CONFIG_CHANGE msg=audit(1683477044.410:1555): auid=4294967295 ses=4294967295 subj=system_u:system_r:unconfined_service_t:s0 op=add_rule key="nginx_conf" list=4 res=1
+	node=web type=CONFIG_CHANGE msg=audit(1683477044.410:1556): auid=4294967295 ses=4294967295 subj=system_u:system_r:unconfined_service_t:s0 op=add_rule key="nginx_conf" list=4 res=1
+	node=web type=SERVICE_START msg=audit(1683477044.412:1557): pid=1 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:init_t:s0 msg='unit=auditd comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+	node=web type=SYSCALL msg=audit(1683477070.665:1558): arch=c000003e syscall=268 success=yes exit=0 a0=ffffffffffffff9c a1=103e110 a2=1a4 a3=7fff6f520f20 items=1 ppid=1108 pid=1679 auid=1000 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts0 ses=13 comm="chmod" exe="/usr/bin/chmod" subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key="nginx_conf"
+	node=web type=CWD msg=audit(1683477070.665:1558):  cwd="/var/log/audit"
+	node=web type=PATH msg=audit(1683477070.665:1558): item=0 name="/etc/nginx/nginx.conf" inode=33902441 dev=08:01 mode=0100755 ouid=0 ogid=0 rdev=00:00 obj=system_u:object_r:httpd_config_t:s0 objtype=NORMAL cap_fp=0000000000000000 cap_fi=0000000000000000 cap_fe=0 cap_fver=0
+	node=web type=PROCTITLE msg=audit(1683477070.665:1558): proctitle=63686D6F64002D78002F6574632F6E67696E782F6E67696E782E636F6E66
+	node=web type=SYSCALL msg=audit(1683477120.040:1559): arch=c000003e syscall=268 success=yes exit=0 a0=ffffffffffffff9c a1=125f0f0 a2=1ed a3=7fff0874d3a0 items=1 ppid=1108 pid=1681 auid=1000 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts0 ses=13 comm="chmod" exe="/usr/bin/chmod" subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key="nginx_conf"
+	node=web type=CWD msg=audit(1683477120.040:1559):  cwd="/var/log/audit"
+	node=web type=PATH msg=audit(1683477120.040:1559): item=0 name="/etc/nginx/nginx.conf" inode=33902441 dev=08:01 mode=0100644 ouid=0 ogid=0 rdev=00:00 obj=system_u:object_r:httpd_config_t:s0 objtype=NORMAL cap_fp=0000000000000000 cap_fi=0000000000000000 cap_fe=0 cap_fver=0
+	node=web type=PROCTITLE msg=audit(1683477120.040:1559): proctitle=63686D6F64002B78002F6574632F6E67696E782F6E67696E782E636F6E66
+	[root@web audit]# 
+
+
+	Лог на Log
+
+	[root@log web]# cat /var/log/audit/audit.log 
+		type=DAEMON_START msg=audit(1683477090.883:5854): op=start ver=2.8.5 format=raw kernel=3.10.0-1127.el7.x86_64 auid=4294967295 pid=22477 uid=0 ses=4294967295 subj=system_u:system_r:auditd_t:s0 res=success
+	type=CONFIG_CHANGE msg=audit(1683477091.038:1085): audit_backlog_limit=8192 old=8192 auid=4294967295 ses=4294967295 subj=system_u:system_r:unconfined_service_t:s0 res=1
+	type=CONFIG_CHANGE msg=audit(1683477091.038:1086): audit_failure=1 old=1 auid=4294967295 ses=4294967295 subj=system_u:system_r:unconfined_service_t:s0 res=1
+	type=SERVICE_START msg=audit(1683477091.038:1087): pid=1 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:init_t:s0 msg='unit=auditd comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+	type=DAEMON_ACCEPT msg=audit(1683477120.045:5855): addr=::ffff:192.168.56.10 port=35300 res=success
+	node=web type=SYSCALL msg=audit(1683477120.040:1559): arch=c000003e syscall=268 success=yes exit=0 a0=ffffffffffffff9c a1=125f0f0 a2=1ed a3=7fff0874d3a0 items=1 ppid=1108 pid=1681 auid=1000 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts0 ses=13 comm="chmod" exe="/usr/bin/chmod" subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key="nginx_conf"
+	node=web type=CWD msg=audit(1683477120.040:1559):  cwd="/var/log/audit"
+	node=web type=PATH msg=audit(1683477120.040:1559): item=0 name="/etc/nginx/nginx.conf" inode=33902441 dev=08:01 mode=0100644 ouid=0 ogid=0 rdev=00:00 obj=system_u:object_r:httpd_config_t:s0 objtype=NORMAL cap_fp=0000000000000000 cap_fi=0000000000000000 cap_fe=0 cap_fver=0
+	node=web type=PROCTITLE msg=audit(1683477120.040:1559): proctitle=63686D6F64002B78002F6574632F6E67696E782F6E67696E782E636F6E66
+	[root@log web]# 
+
+	Логи по NGINX собираются на удаленном сервере
+
+	[root@log web]# ll
+	total 8
+	-rw-------. 1 root root 1732 May  7 18:06 nginx_access.log
+	-rw-------. 1 root root  860 May  7 18:06 nginx_error.log
+
+	В целом система понятна, теперь приступим к дополнительному заданию!
+
+</details>
+
+<details>
+	<summary>
+		Дополнительное задание
+	</summary>
+
 </details>
