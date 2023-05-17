@@ -1,0 +1,162 @@
+---
+- name: NGINX | Install and configure NGINX
+  hosts: web
+  become: true
+  roles:
+    - epel
+    - nginx
+- name: Configure servers
+  hosts: servers
+  tasks:
+    - name: Copy timezone to each other servers
+      become: true
+      ansible.builtin.copy:
+        src: /usr/share/zoneinfo/Europe/Moscow
+        dest: /etc/localtime
+        force: yes
+    - name: restart chronyd
+      ansible.builtin.systemd:
+        name: chronyd
+        state: restarted
+      become: true
+    - name: enable ports in rsyslog.conf of LOG server
+      become: true
+      ansible.builtin.lineinfile:
+        path: /etc/rsyslog.conf
+        regexp: '^#\$ModLoad\simudp'
+        line: '$ModLoad imudp'
+      when:
+        - inventory_hostname in groups.log
+    - name: enable ports in rsyslog.conf of LOG server
+      become: true
+      ansible.builtin.lineinfile:
+        path: /etc/rsyslog.conf
+        regexp: '^#\$UDPServerRun\s514'
+        line: '$UDPServerRun 514'
+      when:
+        - inventory_hostname in groups.log
+    - name: enable ports in rsyslog.conf of LOG server
+      become: true
+      ansible.builtin.lineinfile:
+        path: /etc/rsyslog.conf
+        regexp: '^#\$ModLoad\simtcp'
+        line: '$ModLoad imtcp'
+      when:
+        - inventory_hostname in groups.log
+    - name: enable ports in rsyslog.conf of LOG server
+      become: true
+      ansible.builtin.lineinfile:
+        path: /etc/rsyslog.conf
+        regexp: '^#\$InputTCPServerRun\s514'
+        line: '$InputTCPServerRun 514'    
+      when:
+        - inventory_hostname in groups.log
+    - name: insert end of file
+      become: true
+      ansible.builtin.blockinfile:
+        path: /etc/rsyslog.conf
+        block: |
+          #Add remote logs
+          $template RemoteLogs,"/var/log/rsyslog/%HOSTNAME%/%PROGRAMNAME%.log" 
+          *.* ?RemoteLogs
+          &~
+      when:
+        - inventory_hostname in groups.log
+    - name: restart rsyslogd
+      ansible.builtin.systemd:
+        name: rsyslog
+        state: restarted
+      become: true
+- name: Configure WEB server
+  hosts: web
+  tasks:
+    - name: edit nginx.conf error log
+      become: true
+      ansible.builtin.lineinfile:
+        path: /etc/nginx/nginx.conf
+        line: 'error_log syslog:server=192.168.56.15:514,tag=nginx_error;'
+        insertafter: '^error_log\s/var/log/nginx/error\.log;'
+      tags: edit-nginx-errorlog
+
+    - name: edit nginx.conf access log
+      become: true
+      ansible.builtin.lineinfile:
+        path: /etc/nginx/nginx.conf
+        line: '    access_log syslog:server=192.168.56.15:514,tag=nginx_access,severity=info combined;'
+        insertafter: '^\s{0,4}access_log\s{0,2}/var/log/nginx/access.log.*$'
+      tags: edit-nginx-accesslog
+
+    - name: restart NGINX
+      become: true
+      service: name=nginx state=restarted
+      tags: restart-nginx
+  tags: configure_web_server
+
+- name: Configure auditd
+  hosts: web
+  become: true
+  tasks:
+    - name: edit audit.rules
+      become: true
+      blockinfile:
+        path: /etc/audit/rules.d/audit.rules
+        insertafter: EOF
+        block: |
+          -w /etc/nginx/nginx.conf -p wa -k nginx_conf
+          -w /etc/nginx/default.d/ -p wa -k nginx_conf
+      tags: edit_audit_rules
+    - name: restart auditd
+      become: true
+      service: name=auditd state=restarted use=service
+      tags: restart_audit
+- name: install auditsd-plugins
+  hosts: web
+  become: true
+  roles:
+    - audispd-plugins  
+  tags: install_audispd_plugins
+- name: edit auditd.conf
+  hosts: web
+  become: true
+  tasks:
+    - name: edit log format
+      ansible.builtin.replace:
+        path: /etc/audit/auditd.conf
+        regexp: '^log_format.*$'
+        replace: 'log_format = RAW'
+    - name: edit name format
+      ansible.builtin.replace:
+        path: /etc/audit/auditd.conf
+        regexp: '^name_format.*$'
+        replace: 'name_format = HOSTNAME'
+    - name: edit au-remote.conf
+      ansible.builtin.replace:
+        path: /etc/audisp/plugins.d/au-remote.conf
+        regexp: '^active\s=\sno'
+        replace: 'active = yes'
+      tags: edit_au_remote_conf
+    - name: edit audisp-remote.conf                  
+      ansible.builtin.replace:
+        path: /etc/audisp/audisp-remote.conf
+        regexp: '^remote_server\s='
+        replace: 'remote_server = 192.168.56.15'
+      tags: edit_audisp_remote_conf
+    - name: restart auditd
+      become: true
+      service: name=auditd state=restarted use=service
+      tags: restart_audit
+  tags: edit_auditd_conf
+- name: edit audit.conf on LOG Server
+  hosts: log
+  become: true
+  tasks:
+    - name: open 60 port
+      ansible.builtin.replace:
+        path: /etc/audit/auditd.conf
+        regexp: '^##tcp_listen_port\s=\s60'
+        replace: 'tcp_listen_port = 60'
+    - name: restart auditd
+      become: true
+      service: name=auditd state=restarted use=service
+      tags: restart_audit
+  tags: edit_log_enable_60_port

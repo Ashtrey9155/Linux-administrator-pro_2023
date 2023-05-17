@@ -1,0 +1,13 @@
+---
+# tasks file for nginx
+- name: NGINX | Install NGINX package from EPEL Repo
+  yum:
+    name: nginx
+    state: latest
+  when:
+    ansible_os_family == "RedHat"
+  notify:
+    - restart nginx
+  tags:
+    - nginx-package
+    - package

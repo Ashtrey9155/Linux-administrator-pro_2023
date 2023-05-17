@@ -1,0 +1,8 @@
+---
+# tasks file for audispd plugins
+- name: AUDIT | Install audispd plugins
+  yum:
+    name: audispd-plugins
+    state: present
+  tags:
+    - audispd-plagins

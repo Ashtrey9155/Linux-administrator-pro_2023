@@ -1,0 +1,9 @@
+[web]
+192.168.56.10 ansible_user=vagrant ansible_private_key_file=.vagrant/machines/web/virtualbox/private_key
+
+[log]
+192.168.56.15 ansible_user=vagrant ansible_private_key_file=.vagrant/machines/log/virtualbox/private_key
+
+[servers:children]
+web
+log
