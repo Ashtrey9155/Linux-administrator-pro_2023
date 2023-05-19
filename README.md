@@ -15,6 +15,7 @@
 - #### <a href="#linux-administrator-_-lesson-13-1">Linux Administrator _ Lesson #13</a>
 - #### <a href="#linux-administrator-_-lesson-14-1">Linux Administrator _ Lesson #14</a>
 - #### <a href="#linux-administrator-_-lesson-15-1">Linux Administrator _ Lesson #15</a>
+- #### <a href="#linux-administrator-_-lesson-16-1">Linux Administrator _ Lesson #16</a>
 
 ## Linux Administrator _ Lesson #3
 
@@ -3335,4 +3336,28 @@ functions  README  spawn-fcgi
 Во вложениях приложил Vagrantfile и Ansible структуру. При запуске из Вагрант собирается два сервера web и log и дальше через ansible происходит настройка.
 
 Единственное не всегда служба перезагружается через таски... возможно глюк
+</details>
+
+## Linux Administrator _ Lesson #16
+Архитектура сетей
+
+ Домашнее задание:
+
+   Описание домашнего задания
+   Дана схема сети
+   - Соединить офисы в сеть согласно схеме и настроить роутинг
+   - Все сервера и роутеры должны ходить в инет черз inetRouter
+   - Все сервера должны видеть друг друга
+   - У всех новых серверов отключить дефолт на нат (eth0), который вагрант поднимает для связи
+	при нехватке сетевых интервейсов добавить по несколько адресов на интерфейс
+	Формат сдачи ДЗ - vagrant + ansible
+
+<details>
+	<summary>
+		Vagrantfile, разворачиваем стенд
+	</summary>
+
+	По методичке создал Vagrantfile, но вот не завелось. Проблема в том, что с сервера не может выкачать box. Ругается на отсуствие прав, что очень странно. Выходом стало внесение изменение, а именно добавил локальные пути до box'ов, которые я предварительно скачал сам. Ключем стала строка:
+	box.vm.box_url = "/home/ashtrey/less_16_networks/ubuntu_bullseye64.box"
+Теперь у меня есть 7 виртуальных машин и еще один опыт в решении проблем)
 </details>
