@@ -3361,3 +3361,58 @@ functions  README  spawn-fcgi
 	box.vm.box_url = "/home/ashtrey/less_16_networks/ubuntu_bullseye64.box"
 Теперь у меня есть 7 виртуальных машин и еще один опыт в решении проблем)
 </details>
+
+Далее я расскажу как произходила настройка стенда. Дело не сразу заладилось, мне удалось настроить стенд с 3го раза, причем снося все под ноль. Вся соль была в разношорстных ОСях. Лучше всего поддавался настроке CentOS, далее Ubuntu и как ни странно меньше всего мне понравился Debian.
+
+Для того чтобы проверять правильно ходят маршруты я сначала установил на все виртуальные машины утилиту traceroute.
+yum install traceroute
+apt install traceroute
+
+И так начнем с первого сервера и это inetRouter.
+Я пользовался утилитами ip a, чтобы посмотреть настройки сетевых интерфейсов, ip r чтобы видеть настроенные маршруты, а также iptables -L -v -n -t nat --line-numbers чтобы видеть настройки iptables.
+
+Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1     3162  235K MASQUERADE  all  --  *      eth0    0.0.0.0/0           !192.168.0.0/16  
+
+Это самая главная настройка, так остальные сервера и ПК в сети смогут получить доступ к сети интернет через NAT.
+
+Следом по схеме следует сервер CentralRouter, а это значит что нужен обратный маршрут на все подсети которые находятся за ним.
+Это можно сделать командой ip route add 192.168.0.0/16 via 192.168.255.2 dev eth1
+Другими словами, все одреса назначения из подсети 192.168.0.0 с маской в 16 бит мы должны отправлять на первый интерфейс eth1 и там получателем будет следующий маршрутизатор 192.168.255.2, который точно знает куда деть пришедший пакет.
+В качестве проверки проверим наличие интернета, как идет пакет в сеть и доступен ли 192.168.255.2:
+
+[root@inetRouter ~]# ping ya.ru
+PING ya.ru (77.88.55.242) 56(84) bytes of data.
+64 bytes from ya.ru (77.88.55.242): icmp_seq=1 ttl=63 time=11.9 ms
+64 bytes from ya.ru (77.88.55.242): icmp_seq=2 ttl=63 time=11.5 ms
+64 bytes from ya.ru (77.88.55.242): icmp_seq=3 ttl=63 time=11.7 ms
+64 bytes from ya.ru (77.88.55.242): icmp_seq=4 ttl=63 time=11.5 ms
+64 bytes from ya.ru (77.88.55.242): icmp_seq=5 ttl=63 time=11.4 ms
+^C
+--- ya.ru ping statistics ---
+5 packets transmitted, 5 received, 0% packet loss, time 4016ms
+rtt min/avg/max/mdev = 11.468/11.647/11.962/0.209 ms
+[root@inetRouter ~]# traceroute ya.ru
+traceroute to ya.ru (5.255.255.242), 30 hops max, 60 byte packets
+ 1  gateway (10.0.2.2)  0.224 ms  0.168 ms  0.223 ms
+ 2  * * *
+ 3  78.25.155.105 (78.25.155.105)  2.002 ms  1.953 ms  1.900 ms
+ 4  78.25.155.75 (78.25.155.75)  2.085 ms  2.037 ms  2.146 ms
+ 5  178.18.225.147.ix.dataix.eu (178.18.225.147)  4.971 ms  4.644 ms  4.899 ms
+ 6  * vla-32z3-ae2.yndx.net (93.158.172.23)  11.141 ms vla-32z1-ae4.yndx.net (93.158.160.113)  18.926 ms
+ 7  * * *
+ 8  * * *
+ 9  ya.ru (5.255.255.242)  8.260 ms * *
+[root@inetRouter ~]# ping 192.168.255.2
+PING 192.168.255.2 (192.168.255.2) 56(84) bytes of data.
+64 bytes from 192.168.255.2: icmp_seq=1 ttl=64 time=0.360 ms
+64 bytes from 192.168.255.2: icmp_seq=2 ttl=64 time=1.05 ms
+^C
+--- 192.168.255.2 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1001ms
+rtt min/avg/max/mdev = 0.360/0.707/1.054/0.347 ms
+[root@inetRouter ~]# traceroute 192.168.255.2
+traceroute to 192.168.255.2 (192.168.255.2), 30 hops max, 60 byte packets
+ 1  192.168.255.2 (192.168.255.2)  0.573 ms  0.416 ms  0.246 ms
+[root@inetRouter ~]# 
