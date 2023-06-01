@@ -3362,18 +3362,21 @@ functions  README  spawn-fcgi
 Теперь у меня есть 7 виртуальных машин и еще один опыт в решении проблем)
 </details>
 
-Далее я расскажу как произходила настройка стенда. Дело не сразу заладилось, мне удалось настроить стенд с 3го раза, причем снося все под ноль. Вся соль была в разношорстных ОСях. Лучше всего поддавался настроке CentOS, далее Ubuntu и как ни странно меньше всего мне понравился Debian.
+Далее я расскажу как происходила настройка стенда. Дело не сразу заладилось, мне удалось настроить стенд с 3го раза, причем снося все под ноль. Вся соль была в разношорстных ОСях. Лучше всего поддавался настроке CentOS, далее Ubuntu и как ни странно меньше всего мне понравился Debian.
 
-Для того чтобы проверять правильно ходят маршруты я сначала установил на все виртуальные машины утилиту traceroute.
+Для того чтобы проверять правильно ли ходят пакет по маршрутам, я сначала установил на все виртуальные машины утилиту traceroute.
 yum install traceroute
 apt install traceroute
 
 И так начнем с первого сервера и это inetRouter.
 Я пользовался утилитами ip a, чтобы посмотреть настройки сетевых интерфейсов, ip r чтобы видеть настроенные маршруты, а также iptables -L -v -n -t nat --line-numbers чтобы видеть настройки iptables.
 
-Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
-num   pkts bytes target     prot opt in     out     source               destination         
-1     3162  235K MASQUERADE  all  --  *      eth0    0.0.0.0/0           !192.168.0.0/16  
+
+	Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
+	num   pkts bytes target     prot opt in     out     source               destination         
+	1     3162  235K MASQUERADE  all  --  *      eth0    0.0.0.0/0           !192.168.0.0/16  
+
+
 
 Это самая главная настройка, так остальные сервера и ПК в сети смогут получить доступ к сети интернет через NAT.
 
@@ -3382,37 +3385,477 @@ num   pkts bytes target     prot opt in     out     source               destina
 Другими словами, все одреса назначения из подсети 192.168.0.0 с маской в 16 бит мы должны отправлять на первый интерфейс eth1 и там получателем будет следующий маршрутизатор 192.168.255.2, который точно знает куда деть пришедший пакет.
 В качестве проверки проверим наличие интернета, как идет пакет в сеть и доступен ли 192.168.255.2:
 
-[root@inetRouter ~]# ping ya.ru
-PING ya.ru (77.88.55.242) 56(84) bytes of data.
-64 bytes from ya.ru (77.88.55.242): icmp_seq=1 ttl=63 time=11.9 ms
-64 bytes from ya.ru (77.88.55.242): icmp_seq=2 ttl=63 time=11.5 ms
-64 bytes from ya.ru (77.88.55.242): icmp_seq=3 ttl=63 time=11.7 ms
-64 bytes from ya.ru (77.88.55.242): icmp_seq=4 ttl=63 time=11.5 ms
-64 bytes from ya.ru (77.88.55.242): icmp_seq=5 ttl=63 time=11.4 ms
-^C
---- ya.ru ping statistics ---
-5 packets transmitted, 5 received, 0% packet loss, time 4016ms
-rtt min/avg/max/mdev = 11.468/11.647/11.962/0.209 ms
-[root@inetRouter ~]# traceroute ya.ru
-traceroute to ya.ru (5.255.255.242), 30 hops max, 60 byte packets
- 1  gateway (10.0.2.2)  0.224 ms  0.168 ms  0.223 ms
- 2  * * *
- 3  78.25.155.105 (78.25.155.105)  2.002 ms  1.953 ms  1.900 ms
- 4  78.25.155.75 (78.25.155.75)  2.085 ms  2.037 ms  2.146 ms
- 5  178.18.225.147.ix.dataix.eu (178.18.225.147)  4.971 ms  4.644 ms  4.899 ms
- 6  * vla-32z3-ae2.yndx.net (93.158.172.23)  11.141 ms vla-32z1-ae4.yndx.net (93.158.160.113)  18.926 ms
- 7  * * *
- 8  * * *
- 9  ya.ru (5.255.255.242)  8.260 ms * *
-[root@inetRouter ~]# ping 192.168.255.2
-PING 192.168.255.2 (192.168.255.2) 56(84) bytes of data.
-64 bytes from 192.168.255.2: icmp_seq=1 ttl=64 time=0.360 ms
-64 bytes from 192.168.255.2: icmp_seq=2 ttl=64 time=1.05 ms
-^C
---- 192.168.255.2 ping statistics ---
-2 packets transmitted, 2 received, 0% packet loss, time 1001ms
-rtt min/avg/max/mdev = 0.360/0.707/1.054/0.347 ms
-[root@inetRouter ~]# traceroute 192.168.255.2
-traceroute to 192.168.255.2 (192.168.255.2), 30 hops max, 60 byte packets
- 1  192.168.255.2 (192.168.255.2)  0.573 ms  0.416 ms  0.246 ms
-[root@inetRouter ~]# 
+	[root@inetRouter ~]# ping ya.ru
+	PING ya.ru (77.88.55.242) 56(84) bytes of data.
+	64 bytes from ya.ru (77.88.55.242): icmp_seq=1 ttl=63 time=11.9 ms
+	64 bytes from ya.ru (77.88.55.242): icmp_seq=2 ttl=63 time=11.5 ms
+	64 bytes from ya.ru (77.88.55.242): icmp_seq=3 ttl=63 time=11.7 ms
+	64 bytes from ya.ru (77.88.55.242): icmp_seq=4 ttl=63 time=11.5 ms
+	64 bytes from ya.ru (77.88.55.242): icmp_seq=5 ttl=63 time=11.4 ms
+	^C
+	--- ya.ru ping statistics ---
+	5 packets transmitted, 5 received, 0% packet loss, time 4016ms
+	rtt min/avg/max/mdev = 11.468/11.647/11.962/0.209 ms
+	[root@inetRouter ~]# traceroute ya.ru
+	traceroute to ya.ru (5.255.255.242), 30 hops max, 60 byte packets
+	 1  gateway (10.0.2.2)  0.224 ms  0.168 ms  0.223 ms
+	 2  * * *
+	 3  78.25.155.105 (78.25.155.105)  2.002 ms  1.953 ms  1.900 ms
+	 4  78.25.155.75 (78.25.155.75)  2.085 ms  2.037 ms  2.146 ms
+	 5  178.18.225.147.ix.dataix.eu (178.18.225.147)  4.971 ms  4.644 ms  4.899 ms
+	 6  * vla-32z3-ae2.yndx.net (93.158.172.23)  11.141 ms vla-32z1-ae4.yndx.net (93.158.160.113)  18.926 ms
+	 7  * * *
+	 8  * * *
+	 9  ya.ru (5.255.255.242)  8.260 ms * *
+	[root@inetRouter ~]# ping 192.168.255.2
+	PING 192.168.255.2 (192.168.255.2) 56(84) bytes of data.
+	64 bytes from 192.168.255.2: icmp_seq=1 ttl=64 time=0.360 ms
+	64 bytes from 192.168.255.2: icmp_seq=2 ttl=64 time=1.05 ms
+	^C
+	--- 192.168.255.2 ping statistics ---
+	2 packets transmitted, 2 received, 0% packet loss, time 1001ms
+	rtt min/avg/max/mdev = 0.360/0.707/1.054/0.347 ms
+	[root@inetRouter ~]# traceroute 192.168.255.2
+	traceroute to 192.168.255.2 (192.168.255.2), 30 hops max, 60 byte packets
+	 1  192.168.255.2 (192.168.255.2)  0.573 ms  0.416 ms  0.246 ms
+	[root@inetRouter ~]# 
+
+
+Нужно закрепить этот маршрут.
+
+	[root@inetRouter ~]# cat /etc/sysconfig/network-scripts/route-eth1
+	192.168.0.0/16 via 192.168.255.2 dev eth1
+	[root@inetRouter ~]# 
+
+Теперь после перезапуска не будет пропадать наш обратный маршрут.
+
+##### CentralRouter #####
+
+Необходимо изменить маршрут по-умолчанию и настроить обратные маршруты
+
+	[vagrant@centralRouter ~]$ ip r
+	default via 192.168.255.1 dev eth1 proto static metric 101 
+	10.0.2.0/24 dev eth0 proto kernel scope link src 10.0.2.15 metric 100 
+	192.168.0.0/28 dev eth2 proto kernel scope link src 192.168.0.1 metric 102 
+	192.168.0.32/28 dev eth3 proto kernel scope link src 192.168.0.33 metric 107 
+	192.168.0.64/26 dev eth4 proto kernel scope link src 192.168.0.65 metric 106 
+	192.168.1.0/24 via 192.168.255.6 dev eth6 
+	192.168.2.0/24 via 192.168.255.10 dev eth5 
+	192.168.56.0/24 dev eth7 proto kernel scope link src 192.168.56.11 metric 104 
+	192.168.255.0/30 dev eth1 proto kernel scope link src 192.168.255.2 metric 101 
+	192.168.255.4/30 dev eth6 proto kernel scope link src 192.168.255.5 metric 105 
+	192.168.255.8/30 dev eth5 proto kernel scope link src 192.168.255.9 metric 103 
+
+default маршрут будет отправлять все пакеты в интерфейс eth1 на адрес 192.168.255.1, он же inetRouter,
+а также два обратных маршрута 192.168.1.0/24 via 192.168.255.6 dev eth6 и 192.168.2.0/24 via 192.168.255.10 dev eth5 , это две подсети, которые находятся за office1Router и office2Router. Марштутизатор о них ни чего не знает, он может общаться без маршрутов только с оборудование, которое находится с его интерфейсами в одной подсети, такие как centralServer, он в одной подсети 192.168.0.0/28.
+Проверим как работает интернет и как видны все хосты вокруг
+
+	[vagrant@centralRouter ~]$ ping ya.ru
+	PING ya.ru (77.88.55.242) 56(84) bytes of data.
+	64 bytes from ya.ru (77.88.55.242): icmp_seq=1 ttl=61 time=11.8 ms
+	^C
+	--- ya.ru ping statistics ---
+	1 packets transmitted, 1 received, 0% packet loss, time 0ms
+	rtt min/avg/max/mdev = 11.820/11.820/11.820/0.000 ms
+	[vagrant@centralRouter ~]$ traceroute ya.ru
+	traceroute to ya.ru (5.255.255.242), 30 hops max, 60 byte packets
+	 1  gateway (192.168.255.1)  0.416 ms  0.368 ms  0.339 ms
+	 2  * * *
+	 3  * * *
+	 4  78.25.155.105 (78.25.155.105)  1.937 ms  1.916 ms  1.895 ms
+	 5  78.25.155.75 (78.25.155.75)  2.190 ms  2.132 ms  2.111 ms
+	 6  178.18.225.147.ix.dataix.eu (178.18.225.147)  5.419 ms  5.063 ms  5.016 ms
+	 7  * * *
+	 8  ya.ru (5.255.255.242)  8.358 ms * *
+	[vagrant@centralRouter ~]$ ping 192.168.255.1
+	PING 192.168.255.1 (192.168.255.1) 56(84) bytes of data.
+	64 bytes from 192.168.255.1: icmp_seq=1 ttl=64 time=0.995 ms
+	^C
+	--- 192.168.255.1 ping statistics ---
+	1 packets transmitted, 1 received, 0% packet loss, time 0ms
+	rtt min/avg/max/mdev = 0.995/0.995/0.995/0.000 ms
+	[vagrant@centralRouter ~]$ ping 192.168.0.2
+	PING 192.168.0.2 (192.168.0.2) 56(84) bytes of data.
+	64 bytes from 192.168.0.2: icmp_seq=1 ttl=64 time=0.331 ms
+	^C
+	--- 192.168.0.2 ping statistics ---
+	1 packets transmitted, 1 received, 0% packet loss, time 0ms
+	rtt min/avg/max/mdev = 0.331/0.331/0.331/0.000 ms
+	[vagrant@centralRouter ~]$ ping 192.168.2.130
+	PING 192.168.2.130 (192.168.2.130) 56(84) bytes of data.
+	64 bytes from 192.168.2.130: icmp_seq=1 ttl=63 time=1.95 ms
+	64 bytes from 192.168.2.130: icmp_seq=2 ttl=63 time=2.12 ms
+	^C
+	--- 192.168.2.130 ping statistics ---
+	2 packets transmitted, 2 received, 0% packet loss, time 1001ms
+	rtt min/avg/max/mdev = 1.954/2.039/2.125/0.096 ms
+	[vagrant@centralRouter ~]$ ping 192.168.1.2
+	PING 192.168.1.2 (192.168.1.2) 56(84) bytes of data.
+	64 bytes from 192.168.1.2: icmp_seq=1 ttl=63 time=0.640 ms
+	64 bytes from 192.168.1.2: icmp_seq=2 ttl=63 time=2.03 ms
+	^C
+	--- 192.168.1.2 ping statistics ---
+	2 packets transmitted, 2 received, 0% packet loss, time 1000ms
+	rtt min/avg/max/mdev = 0.640/1.336/2.033/0.697 ms
+	[vagrant@centralRouter ~]$ traceroute 192.168.2.130
+	traceroute to 192.168.2.130 (192.168.2.130), 30 hops max, 60 byte packets
+	 1  192.168.255.10 (192.168.255.10)  0.974 ms  0.852 ms  0.516 ms
+	 2  192.168.2.130 (192.168.2.130)  1.439 ms  2.140 ms  2.047 ms
+	[vagrant@centralRouter ~]$ traceroute 192.168.1.2
+	traceroute to 192.168.1.2 (192.168.1.2), 30 hops max, 60 byte packets
+	 1  192.168.255.6 (192.168.255.6)  0.726 ms  0.601 ms  0.302 ms
+	 2  192.168.1.2 (192.168.1.2)  0.644 ms  0.619 ms  0.664 ms
+	[vagrant@centralRouter ~]$ 
+
+И так, видно что в интернет ходит, ходит через inetRouter, видит близ лежащие сервера, а так же роутеры за их пределами. Для сохранности так же создаем соответствующие записи в /etc/sysconfig/network-scripts/
+
+И самое главно без чего не смогут бегать пакеты через данные роутер, так разрешение на транзит этих пакетов.
+
+	[vagrant@centralRouter ~]$ cat /proc/sys/net/ipv4/ip_forward
+	1
+	[vagrant@centralRouter ~]$ cat /etc/sysc
+	sysconfig/   sysctl.conf  sysctl.d/    
+	[vagrant@centralRouter ~]$ cat /etc/sysctl.conf 
+	# sysctl settings are defined through files in
+	# /usr/lib/sysctl.d/, /run/sysctl.d/, and /etc/sysctl.d/.
+	#
+	# Vendors settings live in /usr/lib/sysctl.d/.
+	# To override a whole file, create a new file with the same in
+	# /etc/sysctl.d/ and put new settings there. To override
+	# only specific settings, add a file with a lexically later
+	# name in /etc/sysctl.d/ and put new settings there.
+	#
+	# For more information, see sysctl.conf(5) and sysctl.d(5).
+	net.ipv4.ip_forward = 1
+	[vagrant@centralRouter ~]$ 
+
+Для этого в ядро внесл правку и зафиксировали в конфиге, чтобы после перезапуска роутер об этом не забыл.
+
+##### centralServer #####
+
+	[vagrant@centralServer ~]$ ip r
+	default via 192.168.0.1 dev eth1 
+	default via 10.0.2.2 dev eth0 proto dhcp metric 100 
+	10.0.2.0/24 dev eth0 proto kernel scope link src 10.0.2.15 metric 100 
+	192.168.0.0/28 dev eth1 proto kernel scope link src 192.168.0.2 metric 101 
+	192.168.56.0/24 dev eth4 proto kernel scope link src 192.168.56.12 metric 104
+
+Тут нам потредовался только маршрут по-умолчанию
+
+	[vagrant@centralServer ~]$ traceroute ya.ru
+	traceroute to ya.ru (77.88.55.242), 30 hops max, 60 byte packets
+	 1  gateway (192.168.0.1)  0.954 ms  0.815 ms  0.563 ms
+	 2  192.168.255.1 (192.168.255.1)  1.689 ms  2.890 ms  2.810 ms
+	 3  * * *
+	 4  * * *
+	 5  * * *
+	 6  78.25.155.75 (78.25.155.75)  34.091 ms  6.061 ms  5.928 ms
+	 7  178.18.225.147.ix.dataix.eu (178.18.225.147)  7.419 ms  7.294 ms  7.033 ms
+	 8  sas-32z1-ae2.yndx.net (87.250.239.179)  13.877 ms * sas-32z1-ae1.yndx.net (87.250.239.177)  14.434 ms
+	 9  * * *
+	10  * ya.ru (77.88.55.242)  14.514 ms *
+
+Видим, что пакет побежал по нашему маршруту.
+
+##### office1Router office2Router #####
+
+Настраивались одинаково, это разрешить ходить пакетам через роутер и настроить маршруты по умолчанию.
+
+дальше листинг
+
+	vagrant@office1Router:~$ ping 1.1.1.1
+	PING 1.1.1.1 (1.1.1.1) 56(84) bytes of data.
+	64 bytes from 1.1.1.1: icmp_seq=1 ttl=59 time=5.32 ms
+	^C
+	--- 1.1.1.1 ping statistics ---
+	1 packets transmitted, 1 received, 0% packet loss, time 0ms
+	rtt min/avg/max/mdev = 5.317/5.317/5.317/0.000 ms
+	vagrant@office1Router:~$ traceroute 1.1.1.1
+	traceroute to 1.1.1.1 (1.1.1.1), 30 hops max, 60 byte packets
+	 1  _gateway (192.168.255.9)  1.726 ms  1.549 ms  1.329 ms
+	 2  192.168.255.1 (192.168.255.1)  2.177 ms  2.117 ms  2.296 ms
+	 3  * * *
+	 4  * * *
+	 5  * * *
+	 6  78.25.155.75 (78.25.155.75)  2.725 ms  4.446 ms  4.339 ms
+	 7  mskn08.klm22.transtelecom.net (217.150.52.114)  10.224 ms  10.004 ms  9.921 ms
+	 8  Cloudflare-msk-gw.transtelecom.net (188.43.3.65)  37.237 ms * *
+	 9  * * *
+	10  * * *
+	11  * * *
+	12  * * *
+	13  * * one.one.one.one (1.1.1.1)  6.974 ms
+	vagrant@office1Router:~$ ip r
+	default via 192.168.255.9 dev enp0s8 proto static 
+	default via 10.0.2.2 dev enp0s3 proto dhcp src 10.0.2.15 metric 100 
+	10.0.2.0/24 dev enp0s3 proto kernel scope link src 10.0.2.15 
+	10.0.2.2 dev enp0s3 proto dhcp scope link src 10.0.2.15 metric 100 
+	192.168.2.0/26 dev enp0s9 proto kernel scope link src 192.168.2.1 
+	192.168.2.64/26 dev enp0s10 proto kernel scope link src 192.168.2.65 
+	192.168.2.128/26 dev enp0s16 proto kernel scope link src 192.168.2.129 
+	192.168.2.192/26 dev enp0s17 proto kernel scope link src 192.168.2.193 
+	192.168.56.0/24 dev enp0s19 proto kernel scope link src 192.168.56.20 
+	192.168.255.8/30 dev enp0s8 proto kernel scope link src 192.168.255.10 
+	vagrant@office1Router:~$ cat /etc/netplan/50-vagrant.yaml 
+	---
+	network:
+	  version: 2
+	  renderer: networkd
+	  ethernets:
+	    enp0s8:
+	      addresses:
+	      - 192.168.255.10/30
+	      routes:
+	      - to: 0.0.0.0/0
+		via: 192.168.255.9
+	    enp0s9:
+	      addresses:
+	      - 192.168.2.1/26
+	    enp0s10:
+	      addresses:
+	      - 192.168.2.65/26
+	    enp0s16:
+	      addresses:
+	      - 192.168.2.129/26
+	    enp0s17:
+	      addresses:
+	      - 192.168.2.193/26
+	    enp0s19:
+	      addresses:
+	      - 192.168.56.20/24
+	vagrant@office1Router:~$ 
+
+Т.к. это Ubuntu, то настраивать маршрут пришлось через netplan. После внесения сответствующей записи в yaml файл, необходимо запустить 
+
+	root@office1Router:~# netplan apply
+	root@office1Router:~# netplan try
+	Do you want to keep these settings?
+
+
+	Press ENTER before the timeout to accept the new configuration
+
+
+	Changes will revert in 119 seconds
+	Configuration accepted.
+	root@office1Router:~# 
+
+Что приятно, утилита пробует ваши настройки и если вы не потеряли связь с сервером и вас устроил результат, нажимаете enter иначе через 120 сек настройки отменятся, что гарантирует от потери связи с устройством.
+
+И листинг со второго сервера
+
+	[vagrant@office2Router ~]$ ip r
+	default via 192.168.255.5 dev eth1 proto static metric 104 
+	10.0.2.0/24 dev eth0 proto kernel scope link src 10.0.2.15 metric 100 
+	192.168.1.0/25 dev eth2 proto kernel scope link src 192.168.1.1 metric 103 
+	192.168.1.128/26 dev eth3 proto kernel scope link src 192.168.1.129 metric 105 
+	192.168.1.192/26 dev eth4 proto kernel scope link src 192.168.1.193 metric 101 
+	192.168.56.0/24 dev eth5 proto kernel scope link src 192.168.56.30 metric 102 
+	192.168.255.4/30 dev eth1 proto kernel scope link src 192.168.255.6 metric 104 
+	[vagrant@office2Router ~]$ cat /etc/sysc
+	sysconfig/   sysctl.conf  sysctl.d/    
+	[vagrant@office2Router ~]$ cat /etc/sysctl.conf 
+	# sysctl settings are defined through files in
+	# /usr/lib/sysctl.d/, /run/sysctl.d/, and /etc/sysctl.d/.
+	#
+	# Vendors settings live in /usr/lib/sysctl.d/.
+	# To override a whole file, create a new file with the same in
+	# /etc/sysctl.d/ and put new settings there. To override
+	# only specific settings, add a file with a lexically later
+	# name in /etc/sysctl.d/ and put new settings there.
+	#
+	# For more information, see sysctl.conf(5) and sysctl.d(5).
+	net.ipv4.ip_forward = 1
+	[vagrant@office2Router ~]$ ping 1.1.1.1
+	PING 1.1.1.1 (1.1.1.1) 56(84) bytes of data.
+	64 bytes from 1.1.1.1: icmp_seq=1 ttl=59 time=4.87 ms
+	64 bytes from 1.1.1.1: icmp_seq=2 ttl=59 time=6.78 ms
+	^C
+	--- 1.1.1.1 ping statistics ---
+	2 packets transmitted, 2 received, 0% packet loss, time 1005ms
+	rtt min/avg/max/mdev = 4.873/5.830/6.788/0.960 ms
+	[vagrant@office2Router ~]$ traceroute 1.1.1.1
+	traceroute to 1.1.1.1 (1.1.1.1), 30 hops max, 60 byte packets
+	 1  gateway (192.168.255.5)  0.342 ms  0.313 ms  0.290 ms
+	 2  192.168.255.1 (192.168.255.1)  0.445 ms  0.426 ms  0.408 ms
+	 3  * * *
+	 4  * * *
+	 5  * * *
+	 6  78.25.155.75 (78.25.155.75)  2.503 ms  3.329 ms  3.199 ms
+	 7  mskn08.klm22.transtelecom.net (217.150.52.114)  5.718 ms  13.794 ms  13.742 ms
+	 8  * * *
+	 9  * * *
+	10  * one.one.one.one (1.1.1.1)  6.393 ms  6.249 ms
+	[vagrant@office2Router ~]$ 
+	[vagrant@office2Router ~]$ cat /etc/sysctl.conf 
+	# sysctl settings are defined through files in
+	# /usr/lib/sysctl.d/, /run/sysctl.d/, and /etc/sysctl.d/.
+	#
+	# Vendors settings live in /usr/lib/sysctl.d/.
+	# To override a whole file, create a new file with the same in
+	# /etc/sysctl.d/ and put new settings there. To override
+	# only specific settings, add a file with a lexically later
+	# name in /etc/sysctl.d/ and put new settings there.
+	#
+	# For more information, see sysctl.conf(5) and sysctl.d(5).
+	net.ipv4.ip_forward = 1
+	[vagrant@office2Router ~]$ cat /etc/sys
+	sysconfig/          sysctl.conf         sysctl.d/           systemd/            system-release      system-release-cpe  
+	[vagrant@office2Router ~]$ cat /etc/sysconfig/
+	anaconda          console/          grub              kernel            network-scripts/  rpcbind           samba             
+	authconfig        cpupower          init              man-db            nfs               rpc-rquotad       selinux           
+	cbq/              crond             ip6tables-config  modules/          qemu-ga           rsyncd            sshd              
+	chronyd           ebtables-config   iptables-config   netconsole        rdisc             rsyslog           wpa_supplicant    
+	cloud-info        firewalld         irqbalance        network           readonly-root     run-parts         
+	[vagrant@office2Router ~]$ cat /etc/sysconfig/network
+	# Created by anaconda
+	GATEWAY=192.168.255.5
+	GATEWAYDEV=eth1
+	[vagrant@office2Router ~]$ cat /etc/sysconfig/network-scripts/
+	ifcfg-eth0              ifdown                  ifdown-ppp              ifup-aliases            ifup-plusb              ifup-tunnel
+	ifcfg-eth1              ifdown-bnep             ifdown-routes           ifup-bnep               ifup-post               ifup-wireless
+	ifcfg-eth2              ifdown-eth              ifdown-sit              ifup-eth                ifup-ppp                init.ipv6-global
+	ifcfg-eth3              ifdown-ippp             ifdown-Team             ifup-ippp               ifup-routes             network-functions
+	ifcfg-eth4              ifdown-ipv6             ifdown-TeamPort         ifup-ipv6               ifup-sit                network-functions-ipv6
+	ifcfg-eth5              ifdown-isdn             ifdown-tunnel           ifup-isdn               ifup-Team               route-eth1
+	ifcfg-lo                ifdown-post             ifup                    ifup-plip               ifup-TeamPort           
+	[vagrant@office2Router ~]$ cat /etc/sysconfig/network-scripts/route-eth1 
+	0.0.0.0/0 via 192.168.255.5
+	[vagrant@office2Router ~]$ 
+
+Здесь я столкнулся с проблемой что автоматом поднимался маршрут по умолчанию через сеть виртуальной машины и файл который мы создали для указания своего маршрута ни как нам не помогал после перезапуска системы. Едиственное что помогло это указание шлюза в файле /etc/sysconfig/network
+
+##### office1Server office2Server #####
+
+Тут еще проще, только def маршруты указать и все
+
+	vagrant@office1Server:~$ ip r
+	default via 192.168.2.129 dev enp0s8 proto static 
+	default via 10.0.2.2 dev enp0s3 proto dhcp src 10.0.2.15 metric 100 
+	10.0.2.0/24 dev enp0s3 proto kernel scope link src 10.0.2.15 
+	10.0.2.2 dev enp0s3 proto dhcp scope link src 10.0.2.15 metric 100 
+	192.168.2.128/26 dev enp0s8 proto kernel scope link src 192.168.2.130 
+	192.168.56.0/24 dev enp0s19 proto kernel scope link src 192.168.56.21 
+	vagrant@office1Server:~$ cat /etc/netplan/50-vagrant.yaml 
+	---
+	network:
+	  version: 2
+	  renderer: networkd
+	  ethernets:
+	    enp0s8:
+	      addresses:
+	      - 192.168.2.130/26
+	      routes:
+	      - to: 0.0.0.0/0
+		via: 192.168.2.129
+	    enp0s19:
+	      addresses:
+	      - 192.168.56.21/24
+	vagrant@office1Server:~$ ping 1.1.1.1
+	PING 1.1.1.1 (1.1.1.1) 56(84) bytes of data.
+	64 bytes from 1.1.1.1: icmp_seq=1 ttl=57 time=8.25 ms
+	64 bytes from 1.1.1.1: icmp_seq=2 ttl=57 time=7.47 ms
+	^C
+	--- 1.1.1.1 ping statistics ---
+	2 packets transmitted, 2 received, 0% packet loss, time 1002ms
+	rtt min/avg/max/mdev = 7.472/7.859/8.246/0.387 ms
+	vagrant@office1Server:~$ traceroute 1.1.1.1
+	traceroute to 1.1.1.1 (1.1.1.1), 30 hops max, 60 byte packets
+	 1  _gateway (192.168.2.129)  1.231 ms  1.128 ms  1.390 ms
+	 2  192.168.255.9 (192.168.255.9)  2.276 ms  2.341 ms  2.120 ms
+	 3  192.168.255.1 (192.168.255.1)  2.062 ms  1.923 ms  1.845 ms
+	 4  * * *
+	 5  * * *
+	 6  * * *
+	 7  * * *
+	 8  mskn08.klm22.transtelecom.net (217.150.52.114)  7.537 ms  7.500 ms  7.460 ms
+	 9  Cloudflare-msk-gw.transtelecom.net (188.43.3.65)  7.341 ms  9.078 ms  10.255 ms
+	10  one.one.one.one (1.1.1.1)  7.578 ms  9.505 ms  9.112 ms
+	vagrant@office1Server:~$ ping 192.168.0.2
+	PING 192.168.0.2 (192.168.0.2) 56(84) bytes of data.
+	64 bytes from 192.168.0.2: icmp_seq=1 ttl=62 time=1.19 ms
+	64 bytes from 192.168.0.2: icmp_seq=2 ttl=62 time=2.79 ms
+	^C
+	--- 192.168.0.2 ping statistics ---
+	2 packets transmitted, 2 received, 0% packet loss, time 1011ms
+	rtt min/avg/max/mdev = 1.186/1.990/2.794/0.804 ms
+	vagrant@office1Server:~$ traceroute 192.168.1.2
+	traceroute to 192.168.1.2 (192.168.1.2), 30 hops max, 60 byte packets
+	 1  _gateway (192.168.2.129)  1.026 ms  0.924 ms  0.864 ms
+	 2  192.168.255.9 (192.168.255.9)  2.055 ms  1.972 ms  1.902 ms
+	 3  192.168.255.6 (192.168.255.6)  1.845 ms  1.878 ms  1.887 ms
+	 4  192.168.1.2 (192.168.1.2)  2.415 ms  2.352 ms  2.295 ms
+	vagrant@office1Server:~$ 
+
+Интернет работает, пакеты бегают везде.
+
+И листинг со второго сервера, он на Debian
+
+	vagrant@office2Server:~$ cat /etc/network/interfaces
+	# interfaces(5) file used by ifup(8) and ifdown(8)
+	# Include files from /etc/network/interfaces.d:
+	source-directory /etc/network/interfaces.d
+
+	# The loopback network interface
+	auto lo
+	iface lo inet loopback
+
+	# The primary network interface
+	allow-hotplug eth0
+	iface eth0 inet dhcp
+	#VAGRANT-BEGIN
+	# The contents below are automatically generated by Vagrant. Do not modify.
+	auto eth1
+	iface eth1 inet static
+	      address 192.168.1.2
+	      netmask 255.255.255.128
+	up ip route add 0.0.0.0/0 via 192.168.1.1
+	#VAGRANT-END
+
+	#VAGRANT-BEGIN
+	# The contents below are automatically generated by Vagrant. Do not modify.
+	auto eth2
+	iface eth2 inet static
+	      address 192.168.56.31
+	      netmask 255.255.255.0
+	#VAGRANT-END
+	vagrant@office2Server:~$ ip r
+	default via 192.168.1.1 dev eth1 
+	10.0.2.0/24 dev eth0 proto kernel scope link src 10.0.2.15 
+	192.168.1.0/25 dev eth1 proto kernel scope link src 192.168.1.2 
+	192.168.56.0/24 dev eth2 proto kernel scope link src 192.168.56.31 
+	vagrant@office2Server:~$ ping 1.1.1.1
+	PING 1.1.1.1 (1.1.1.1) 56(84) bytes of data.
+	64 bytes from 1.1.1.1: icmp_seq=1 ttl=57 time=5.30 ms
+	^C
+	--- 1.1.1.1 ping statistics ---
+	1 packets transmitted, 1 received, 0% packet loss, time 0ms
+	rtt min/avg/max/mdev = 5.300/5.300/5.300/0.000 ms
+	vagrant@office2Server:~$ traceroute 1.1.1.1
+	traceroute to 1.1.1.1 (1.1.1.1), 30 hops max, 60 byte packets
+	 1  192.168.1.1 (192.168.1.1)  0.981 ms  0.875 ms  0.551 ms
+	 2  192.168.255.5 (192.168.255.5)  1.215 ms  1.142 ms  1.127 ms
+	 3  192.168.255.1 (192.168.255.1)  1.752 ms  1.544 ms  1.475 ms
+	 4  * * *
+	 5  * * *
+	 6  * * *
+	 7  * * *
+	 8  mskn08.klm22.transtelecom.net (217.150.52.114)  6.696 ms  6.590 ms  6.549 ms
+	 9  * Cloudflare-msk-gw.transtelecom.net (188.43.3.65)  7.460 ms  7.403 ms
+	10  * one.one.one.one (1.1.1.1)  6.785 ms  6.709 ms
+	vagrant@office2Server:~$ traceroute 192.168.0.2
+	traceroute to 192.168.0.2 (192.168.0.2), 30 hops max, 60 byte packets
+	 1  192.168.1.1 (192.168.1.1)  0.937 ms  0.811 ms  1.087 ms
+	 2  192.168.255.5 (192.168.255.5)  1.708 ms  1.871 ms  1.368 ms
+	 3  192.168.0.2 (192.168.0.2)  3.854 ms  4.337 ms  4.242 ms
+	vagrant@office2Server:~$ traceroute 192.168.2.130
+	traceroute to 192.168.2.130 (192.168.2.130), 30 hops max, 60 byte packets
+	 1  192.168.1.1 (192.168.1.1)  1.168 ms  1.058 ms  0.989 ms
+	 2  192.168.255.5 (192.168.255.5)  1.472 ms  0.816 ms  0.734 ms
+	 3  192.168.255.10 (192.168.255.10)  1.104 ms  1.035 ms  0.825 ms
+	 4  192.168.2.130 (192.168.2.130)  1.308 ms  1.364 ms  1.392 ms
+	vagrant@office2Server:~$ 
+
+
+Немного отличается настройка, но так же работает интернет и бегают пакеты между серверами и роутерами.
+
+Я специально уперся и настроил весь этот зоопарк, т.к. каждая ОСь имеет особенность. Но настраивать через Ansible выше моих сил, это реально, но придется потратить еще кучу времени.
