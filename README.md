@@ -16,6 +16,7 @@
 - #### <a href="#linux-administrator-_-lesson-14-1">Linux Administrator _ Lesson #14</a>
 - #### <a href="#linux-administrator-_-lesson-15-1">Linux Administrator _ Lesson #15</a>
 - #### <a href="#linux-administrator-_-lesson-16-1">Linux Administrator _ Lesson #16</a>
+- #### <a href="#linux-administrator-_-lesson-17-1">Linux Administrator _ Lesson #17</a>
 
 ## Linux Administrator _ Lesson #3
 
@@ -3338,6 +3339,8 @@ functions  README  spawn-fcgi
 Единственное не всегда служба перезагружается через таски... возможно глюк
 </details>
 
+
+
 ## Linux Administrator _ Lesson #16
 Архитектура сетей
 
@@ -3351,6 +3354,123 @@ functions  README  spawn-fcgi
    - У всех новых серверов отключить дефолт на нат (eth0), который вагрант поднимает для связи
 	при нехватке сетевых интервейсов добавить по несколько адресов на интерфейс
 	Формат сдачи ДЗ - vagrant + ansible
+<details>
+	<summary>
+		Теоретическая часть
+	</summary>
+
+	В теоретической части требуется: 
+	Найти свободные подсети
+	Посчитать количество узлов в каждой подсети, включая свободные
+	Указать Broadcast-адрес для каждой подсети
+	Проверить, нет ли ошибок при разбиении
+
+Сеть office1
+- 192.168.2.0/26      	- dev
+- 192.168.2.64/26     	- test servers
+- 192.168.2.128/26    	- managers
+- 192.168.2.192/26    	- office hardware
+
+Сеть office2
+- 192.168.1.0/25      	- dev
+- 192.168.1.128/26    	- test servers
+- 192.168.1.192/26    	- office hardware
+
+Сеть central
+- 192.168.0.0/28     	- directors
+- 192.168.0.32/28    	- office hardware
+- 192.168.0.64/26    	- wifi
+
+Сеть InetRouter
+- 192.168.255.0/30	- InetRouter
+
+192.168.2.0/26 		- dev
+
+	netmask 255.255.255.192 | hosts 62 | network 192.168.2.0 | broadcast 192.168.2.63
+
+192.168.2.64/26     	- test servers
+
+	netmask 255.255.255.192 | hosts 62 | network 192.168.2.64 | broadcast 192.168.2.127
+
+192.168.2.128/26    	- managers
+
+	netmask 255.255.255.192 | hosts 62 | network 192.168.2.128 | broadcast 192.168.2.191
+
+192.168.2.192/26    	- office hardware
+
+	netmask 255.255.255.192 | hosts 62 | network 192.168.2.192 | broadcast 192.168.2.255
+
+##Свободных подсетей нет
+
+192.168.1.0/25      	- dev
+
+	netmask 255.255.255.128 | hosts 126 | network 192.168.1.0 | broadcast 192.168.1.127
+
+192.168.1.128/26    	- test servers
+
+	netmask 255.255.255.192 | hosts 62 | network 192.168.1.128 | broadcast 192.168.1.191
+
+192.168.1.192/26    	- office hardware
+
+	netmask 255.255.255.192 | hosts 62 | network 192.168.1.192 | broadcast 192.168.1.255
+
+##Свободных подсетей нет
+
+192.168.0.0/28     	- directors
+
+	netmask 255.255.255.240 | hosts 14 | network 192.168.0.0 | broadcast 192.168.0.15
+
+## Свободная подсеть 192.168.0.16/28
+
+	netmask 255.255.255.240 | hosts 14 | network 192.168.0.16 | broadcast 192.168.0.31
+
+192.168.0.32/28    	- office hardware
+
+	netmask 255.255.255.240 | hosts 14 | network 192.168.0.32 | broadcast 192.168.0.47
+
+## Свободная подсеть 192.168.0.48/28
+
+	netmask 255.255.255.240 | hosts 14 | network 192.168.0.48 | broadcast 192.168.0.63
+
+192.168.0.64/26    	- wifi
+
+	netmask 255.255.255.192 | hosts 62 | network 192.168.0.64 | broadcast 192.168.0.127
+
+## Свободная подсеть 192.168.0.128/25
+
+	netmask 255.255.255.128 | hosts 126 | network 192.168.0.128 | broadcast 192.168.0.255
+
+192.168.255.0/30	- InetRouter
+
+	netmask 255.255.255.252 | hosts 2 | network 192.168.255.0 | broadcast 192.168.255.3
+
+## Свободная подсеть 192.168.255.4/30
+
+	netmask 255.255.255.252 | hosts 2 | network 192.168.255.4 | broadcast 192.168.255.7
+
+## Свободная подсеть 192.168.255.8/29
+
+	netmask 255.255.255.248 | hosts 6 | network 192.168.255.8 | broadcast 192.168.255.15
+
+## Свободная подсеть 192.168.255.16/28
+
+	netmask 255.255.255.240 | hosts 14 | network 192.168.255.16 | broadcast 192.168.255.31
+
+## Свободная подсеть 192.168.255.32/27
+
+	netmask 255.255.255.224 | hosts 30 | network 192.168.255.32 | broadcast 192.168.255.63
+
+## Свободная подсеть 192.168.255.64/26
+
+	netmask 255.255.255.192 | hosts 62 | network 192.168.255.64 | broadcast 192.168.255.127
+
+## Свободная подсеть 192.168.255.128/25
+
+	netmask 255.255.255.128 | hosts 126 | network 192.168.255.128 | broadcast 192.168.255.254
+
+Как мы можем заметить последней подсети в методичке как свободно не описано.
+
+</details>
 
 <details>
 	<summary>
@@ -3859,3 +3979,21 @@ default маршрут будет отправлять все пакеты в и
 Немного отличается настройка, но так же работает интернет и бегают пакеты между серверами и роутерами.
 
 Я специально уперся и настроил весь этот зоопарк, т.к. каждая ОСь имеет особенность. Но настраивать через Ansible выше моих сил, это реально, но придется потратить еще кучу времени.
+
+
+## Linux Administrator _ Lesson #17
+	
+ Домашнее задание:
+
+	Настройка PXE сервера для автоматической установки
+
+	1. Следуя шагам из документа https://docs.centos.org/en-US/8-docs/advanced-install/assembly_preparing-for-a-network-install  установить и настроить загрузку по сети для дистрибутива CentOS 8.
+	В качестве шаблона воспользуйтесь репозиторием https://github.com/nixuser/virtlab/tree/main/centos_pxe 
+	2. Поменять установку из репозитория NFS на установку из репозитория HTTP.
+	3. Настроить автоматическую установку для созданного kickstart файла (*) Файл загружается по HTTP.
+	* 4.  автоматизировать процесс установки Cobbler cледуя шагам из документа https://cobbler.github.io/quickstart/. 
+	Задание со звездочкой выполняется по желанию.
+
+	Формат сдачи ДЗ - vagrant + ansible
+
+
