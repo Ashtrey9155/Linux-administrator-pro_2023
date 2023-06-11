@@ -17,6 +17,7 @@
 - #### <a href="#linux-administrator-_-lesson-15-1">Linux Administrator _ Lesson #15</a>
 - #### <a href="#linux-administrator-_-lesson-16-1">Linux Administrator _ Lesson #16</a>
 - #### <a href="#linux-administrator-_-lesson-17-1">Linux Administrator _ Lesson #17</a>
+- #### <a href="#linux-administrator-_-lesson-18-1">Linux Administrator _ Lesson #18</a>
 
 ## Linux Administrator _ Lesson #3
 
@@ -3997,3 +3998,93 @@ default маршрут будет отправлять все пакеты в и
 	Формат сдачи ДЗ - vagrant + ansible
 
 
+
+## Linux Administrator _ Lesson #18
+
+Домашнее задание:
+
+	Научиться создавать пользователей и добавлять им ограничения
+
+	Описание домашнего задания
+	1) Запретить всем пользователям, кроме группы admin, логин в выходные (суббота и воскресенье), без учета праздников
+
+	* дать конкретному пользователю права работать с докером
+	и возможность рестартить докер сервис
+
+<details>
+	<summary>
+		Модифицированный Vagrantfile
+	</summary>
+
+	# Описание параметров ВМ
+	MACHINES = {
+	  # Имя DV "pam"
+	  :"pam" => {
+		      # VM box
+		      :box_name => "centos/stream8",
+		      #box_version
+		      :box_version => "20210210.0",
+		      # Количество ядер CPU
+		      :cpus => 2,
+		      # Указываем количество ОЗУ (В Мегабайтах)
+		      :memory => 1024,
+		      # Указываем IP-адрес для ВМ
+		      :ip => "192.168.56.18",
+		    }
+	}
+
+	Vagrant.configure("2") do |config|
+	  MACHINES.each do |boxname, boxconfig|
+	    # Отключаем сетевую папку
+	    config.vm.synced_folder ".", "/vagrant", disabled: true
+	    # Добавляем сетевой интерфейс
+	    config.vm.network "private_network", ip: boxconfig[:ip]
+	    # Применяем параметры, указанные выше
+	    config.vm.define boxname do |box|
+	      box.vm.box = boxconfig[:box_name]
+	      #box.vm.box_version = boxconfig[:box_version]
+	      box.vm.host_name = boxname.to_s
+	      box.vm.box_url = "/home/ashtrey/less_18_pam/centos8.box"
+	      box.vm.provider "virtualbox" do |v|
+		v.memory = boxconfig[:memory]
+		v.cpus = boxconfig[:cpus]
+	      end
+
+	      box.vm.provision "shell", inline: <<-SHELL
+		  #cp login.sh ~/home
+		  #Разрешаем подключение пользователей по SSH с использованием пароля
+		  mkdir -p ~root/.ssh
+		  cp ~vagrant/.ssh/auth* ~root/.ssh
+		  #sed -i '65s/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+		  sed -i 's/^PasswordAuthentication.*$/PasswordAuthentication yes/' /etc/ssh/sshd_config
+		  sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
+		  sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
+		  #Перезапуск службы SSHD
+		  systemctl restart sshd.service
+		  yum install epel-release -y
+		  yum install pam_script -y
+		  useradd otusadm 
+		  useradd otus
+		  echo "Otus2022!" | passwd otusadm --stdin
+		  echo "Otus2022!" | passwd otus --stdin
+		  groupadd -f admin
+		  usermod otusadm -a -G admin
+		  usermod root -a -G admin 
+		  usermod vagrant -a -G admin
+		  systemctl restart sshd
+	      SHELL
+	      box.vm.provision "file", source: "./login.sh", destination: "/tmp/login.sh"
+	      box.vm.provision "shell", inline: "cp /tmp/login.sh /usr/local/bin/"
+	    end
+	  end
+	end
+
+</details>
+
+Его особенность только в том, что почти все уже готово для работы, но вот беда, не работает.
+
+В файле /etc/pam.d/sshd вношу изменение
+
+	account    required	pam_exec	/usr/local/bin/login.sh
+
+И больше ни рутом ни каким то другим пользователем не могу залогиниться. 
