@@ -4081,10 +4081,24 @@ default маршрут будет отправлять все пакеты в и
 
 </details>
 
-Его особенность только в том, что почти все уже готово для работы, но вот беда, не работает.
+Его особенность только в том, что почти все уже готово для работы.
 
 В файле /etc/pam.d/sshd вношу изменение
 
-	account    required	pam_exec	/usr/local/bin/login.sh
+	account    required	pam_exec.so	/usr/local/bin/login.sh
 
-И больше ни рутом ни каким то другим пользователем не могу залогиниться. 
+	[vagrant@pam ~]$ ssh otusadm@192.168.56.18
+	The authenticity of host '192.168.56.18 (192.168.56.18)' can't be established.
+	ECDSA key fingerprint is SHA256:+shcF6B0IPjsEH8sGLNampc2Krmpg8yrN6sQmA4I7rE.
+	Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+	Warning: Permanently added '192.168.56.18' (ECDSA) to the list of known hosts.
+	otusadm@192.168.56.18's password: 
+	[otusadm@pam ~]$ exit
+	logout
+	Connection to 192.168.56.18 closed.
+	[vagrant@pam ~]$ ssh otus@192.168.56.18
+	otus@192.168.56.18's password: 
+	/usr/local/bin/login.sh failed: exit code 1
+	Connection closed by 192.168.56.18 port 22
+	[vagrant@pam ~]$ 
+
