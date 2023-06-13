@@ -18,6 +18,7 @@
 - #### <a href="#linux-administrator-_-lesson-16-1">Linux Administrator _ Lesson #16</a>
 - #### <a href="#linux-administrator-_-lesson-17-1">Linux Administrator _ Lesson #17</a>
 - #### <a href="#linux-administrator-_-lesson-18-1">Linux Administrator _ Lesson #18</a>
+- #### <a href="#linux-administrator-_-lesson-19-1">Linux Administrator _ Lesson #19</a>
 
 ## Linux Administrator _ Lesson #3
 
@@ -588,7 +589,9 @@ end
 
 	
 </details>
-	
+
+
+
 <details>
 	<summary>
 		<code>2. Определение настроек пула</code>
@@ -659,8 +662,11 @@ end
 	otus  checksum  sha256     local
 
 </details>
-	
+
+
+
 <details>
+	
 	<summary>
 		<code>3. Работа со снапшотом, поиск сообщения от преподавателя</code>
 	</summary>
@@ -685,11 +691,13 @@ end
 		drwxr-xr-x. 2 root root      32 May 15  2020 zpoolexport
 		[root@zfs ~]# 
 	
-Восстановим файловую систему из снапшота:
-	
+	Восстановим файловую систему из снапшота:
+
+		
 	[root@zfs ~]# zfs receive otus/test@today < otus_task2.file
-								   
-Далее, ищем в каталоге /otus/test файл с именем “secret_message”:
+		
+
+	Далее, ищем в каталоге /otus/test файл с именем "secret_message":
 								   
 	[root@zfs ~]# ll /otus/test/
 		total 2590
@@ -735,7 +743,7 @@ end
 	 yum install -y wget
 	root@otuslearn:/home/ashtrey/less_04_zfs/sets_script# 
 								   
-Vagrant file:
+	Vagrant file:
 	
 	root@otuslearn:/home/ashtrey/less_04_zfs/sets_script# cat Vagrantfile 
 	# -*- mode: ruby -*-
@@ -824,7 +832,7 @@ Vagrant file:
 		    if needsController == true
 			vb.customize ["storagectl", :id, "--name", "SATA", "--add", "sata" ]
 			boxconfig[:disks].each do |dname, dconf|
-			vb.customize ['storageattach', :id,  '--storagectl', 'SATA', '--port', dconf[:port], '--device', 0, '--type', 'hdd', '--medium', dconf[:dfile]]
+			vb.customize ['storageattach', :id,  '--storagectl', 'SATA', '--port', dconf[:port], '--device', 0, '--	type', 'hdd', '--medium', dconf[:dfile]]
 			end
 		     end
 		  end
@@ -835,10 +843,11 @@ Vagrant file:
 	  end
 	end
 	root@otuslearn:/home/ashtrey/less_04_zfs/sets_script#
+	
 </details>
 
 ## Linux Administrator _ Lesson #5
-
+	
 Домашнее задание
 
 	Vagrant стенд для NFS
@@ -2513,6 +2522,7 @@ functions  README  spawn-fcgi
 	<summary>
 		Сначала я написал свой первый playbook, а позже переделал его в роли
 	</summary>
+	
 	По ссылке ниже попадете на GIT со всем содержимым
 	https://github.com/Ashtrey9155/Linux-administrator-pro_2023/tree/main/lesson_11_ansible
 	
@@ -2550,7 +2560,7 @@ functions  README  spawn-fcgi
 		<title>Test Page for the Nginx HTTP Server on Red Hat Enterprise Linux</title>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 		<style type="text/css">
-		    /*<![CDATA[*/
+		    /*<\![CDATA[*/
 		    body {
 			background-color: #fff;
 			color: #000;
@@ -2752,7 +2762,7 @@ functions  README  spawn-fcgi
 		<title>Test Page for the Nginx HTTP Server on Red Hat Enterprise Linux</title>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 		<style type="text/css">
-		    /*<![CDATA[*/
+		    /*<\![CDATA[*/
 		    body {
 			background-color: #fff;
 			color: #000;
@@ -2803,7 +2813,7 @@ functions  README  spawn-fcgi
 		<title>Test Page for the Nginx HTTP Server on Red Hat Enterprise Linux</title>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 		<style type="text/css">
-		    /*<![CDATA[*/
+		    /*<\![CDATA[*/
 		    body {
 			background-color: #fff;
 			color: #000;
@@ -2849,7 +2859,7 @@ functions  README  spawn-fcgi
 		<title>Test Page for the Nginx HTTP Server on Red Hat Enterprise Linux</title>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 		<style type="text/css">
-		    /*<![CDATA[*/
+		    /*<\![CDATA[*/
 		    body {
 			background-color: #fff;
 			color: #000;
@@ -4101,4 +4111,70 @@ default маршрут будет отправлять все пакеты в и
 	/usr/local/bin/login.sh failed: exit code 1
 	Connection closed by 192.168.56.18 port 22
 	[vagrant@pam ~]$ 
+			
+<details>
+	<summary>
+		login.sh
+	</summary>
+	
+		ashtrey@otuslearn:~/less_18_pam$ cat login.sh 
+		#!/bin/bash
+		#Первое условие: если день недели суббота или воскресенье
+		if [ $(date +%a) = "Sat" ] || [ $(date +%a) = "Sun" ]; then
+		 #Второе условие: входит ли пользователь в группу admin
+		 if getent group admin | grep -qw "$PAM_USER"; then
+			#Если пользователь входит в группу admin, то он может подключиться
+			exit 0
+		      else
+			#Иначе ошибка (не сможет подключиться)
+			exit 1
+		    fi
+		  #Если день не выходной, то подключиться может любой пользователь
+		  else
+		    exit 0
+		fi
+</details>
 
+## Linux Administrator _ Lesson #19
+
+Домашнее задание:
+
+	1.  Реализовать knocking port
+	   - centralRouter может попасть на ssh inetrRouter через knock скрипт. 
+			Пример в материалах.
+	2. Добавить inetRouter2, который виден(маршрутизируется (host-only тип сети для виртуалки)) 
+			с хоста или форвардится порт через локалхост.
+	3. Запустить nginx на centralServer.
+	4. Пробросить 80й порт на inetRouter2 8080.
+	5. Дефолт в инет оставить через inetRouter.
+	Формат сдачи ДЗ - vagrant + ansible
+	* реализовать проход на 80й порт без маскарадинга
+	
+
+1. Реализовать knocking port
+
+	За основу я взял настроенный стенд из 16 урока по сетям. У нас есть два сервера один inetRouter, а другой centralRouter.
+	Проверим что они друг друга видят и мы можем залогиниться на один из них.
+	
+		[vagrant@centralRouter ~]$ ping 192.168.56.10
+		PING 192.168.56.10 (192.168.56.10) 56(84) bytes of data.
+		64 bytes from 192.168.56.10: icmp_seq=1 ttl=64 time=0.383 ms
+		64 bytes from 192.168.56.10: icmp_seq=2 ttl=64 time=1.22 ms
+		^C
+		--- 192.168.56.10 ping statistics ---
+		2 packets transmitted, 2 received, 0% packet loss, time 999ms
+		rtt min/avg/max/mdev = 0.383/0.803/1.224/0.421 ms
+
+		[vagrant@centralRouter ~]$ ssh root@192.168.56.10
+		root@192.168.56.10's password: 
+		[root@inetRouter ~]# 
+		[root@inetRouter ~]# exit
+		logout
+		Connection to 192.168.56.10 closed.
+
+	
+<details>
+	<summary>
+		
+	</summary>
+</details>
