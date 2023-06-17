@@ -4175,6 +4175,68 @@ default маршрут будет отправлять все пакеты в и
 	
 <details>
 	<summary>
-		
+		На стороне centralRouter
 	</summary>
+	
+Делаем попытку подключиться по ssh
+
+	 [root@centralRouter ~]# ssh root@192.168.255.1
+	^C
+	
+Потерпели неудачу
+
+	[root@centralRouter ~]# nmap -Pn --host-timeout 100 --max-retries 1 -p 8881 192.168.255.1
+	
+	Starting Nmap 6.40 ( http://nmap.org ) at 2023-06-16 15:50 UTC
+	Warning: 192.168.255.1 giving up on port because retransmission cap hit (0).
+	Nmap scan report for 192.168.255.1
+	Host is up (0.00041s latency).
+	PORT     STATE    SERVICE
+	8881/tcp filtered unknown
+	MAC Address: 08:00:27:8D:67:90 (Cadmus Computer Systems)
+	
+	Nmap done: 1 IP address (1 host up) scanned in 0.48 seconds
+	
+	[root@centralRouter ~]# nmap -Pn --host-timeout 100 --max-retries 1 -p 7777 192.168.255.1
+	
+	Starting Nmap 6.40 ( http://nmap.org ) at 2023-06-16 15:50 UTC
+	Warning: 192.168.255.1 giving up on port because retransmission cap hit (0).
+	Nmap scan report for 192.168.255.1
+	Host is up (0.00037s latency).
+	PORT     STATE    SERVICE
+	7777/tcp filtered cbt
+	MAC Address: 08:00:27:8D:67:90 (Cadmus Computer Systems)
+	
+	Nmap done: 1 IP address (1 host up) scanned in 0.45 seconds
+	
+	[root@centralRouter ~]# nmap -Pn --host-timeout 100 --max-retries 1 -p 9991 192.168.255.1
+	
+	Starting Nmap 6.40 ( http://nmap.org ) at 2023-06-16 15:51 UTC
+	Nmap scan report for 192.168.255.1
+	Host is up (0.00052s latency).
+	PORT     STATE  SERVICE
+	9991/tcp closed issa
+	MAC Address: 08:00:27:8D:67:90 (Cadmus Computer Systems)
+	
+	Nmap done: 1 IP address (1 host up) scanned in 0.55 seconds
+
+ Делаем еще попытку подключиться
+ 
+	[root@centralRouter ~]# ssh root@192.168.255.1
+	The authenticity of host '192.168.255.1 (192.168.255.1)' can't be established.
+	ECDSA key fingerprint is SHA256:88V8PIkB6SJL10DApPycuJR1sbN3nhYhhv/ClsxWHqw.
+	ECDSA key fingerprint is MD5:3a:a9:99:72:c8:52:04:ce:d8:8e:14:1a:62:01:d7:5e.
+	Are you sure you want to continue connecting (yes/no)? yes
+	Warning: Permanently added '192.168.255.1' (ECDSA) to the list of known hosts.
+	Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+	[root@centralRouter ~]# 
+
+ Все получилось, только нас не пустило. А не пустила настройка 
+	[root@centralRouter ~]#      
+	[root@centralRouter ~]# vi /etc/ssh/sshd_config 
+
+ 	Меняем PasswordAuthentication no
+  	на PasswordAuthentication yes
+   
+	И все!!!
 </details>
