@@ -4241,4 +4241,36 @@ default маршрут будет отправлять все пакеты в и
 	И все!!!
 </details>
 
+<details>
+	<summary>
+ 		Доступность inetRouter2(192.168.0.2) через хост
+   	</summary>
 
+	ashtrey@otuslearn:~/less_19_iptables$ ping 192.168.0.2
+	PING 192.168.0.2 (192.168.0.2) 56(84) bytes of data.
+	64 bytes from 192.168.0.2: icmp_seq=88 ttl=62 time=2.45 ms
+	64 bytes from 192.168.0.2: icmp_seq=89 ttl=62 time=2.42 ms
+	64 bytes from 192.168.0.2: icmp_seq=90 ttl=62 time=2.28 ms
+	64 bytes from 192.168.0.2: icmp_seq=91 ttl=62 time=2.49 ms
+	64 bytes from 192.168.0.2: icmp_seq=92 ttl=62 time=2.53 ms
+	64 bytes from 192.168.0.2: icmp_seq=93 ttl=62 time=2.41 ms
+	^C
+	--- 192.168.0.2 ping statistics ---
+	93 packets transmitted, 6 received, 93.5484% packet loss, time 94097ms
+	rtt min/avg/max/mdev = 2.282/2.431/2.532/0.078 ms
+ 
+	ashtrey@otuslearn:~/less_19_iptables$ traceroute 192.168.0.2
+	traceroute to 192.168.0.2 (192.168.0.2), 30 hops max, 60 byte packets
+	 1  192.168.56.10 (192.168.56.10)  0.642 ms  0.589 ms  0.603 ms
+	 2  192.168.255.2 (192.168.255.2)  2.550 ms  2.631 ms  2.601 ms
+	 3  192.168.0.2 (192.168.0.2)  2.817 ms  2.775 ms  2.727 ms
+  
+	ashtrey@otuslearn:~/less_19_iptables$ ip r
+	192.168.0.0/28 via 192.168.56.10 dev vboxnet0 
+	192.168.56.0/24 dev vboxnet0 proto kernel scope link src 192.168.56.1 
+	192.168.88.0/24 dev enp1s0 proto kernel scope link src 192.168.88.14 metric 100 
+	192.168.88.0/24 dev wlp2s0 proto kernel scope link src 192.168.88.2 metric 600 
+	ashtrey@otuslearn:~/less_19_iptables$ 
+
+ Мне пришлось прописать прописать маршруты на машинах, после чего icmp побежал правильным маршрутом
+</details>
