@@ -4274,3 +4274,35 @@ default маршрут будет отправлять все пакеты в и
 
  Мне пришлось прописать прописать маршруты на машинах, после чего icmp побежал правильным маршрутом
 </details>
+
+<details>
+	<summary>
+		Проброс порта на centralRouter:80
+ 	</summary>
+
+  Для этого добавил на inetRouter2 пару правил
+
+  	[root@inetRouter2 ~]# iptables -t nat -A PREROUTING -p tcp --dport 8080 -j DNAT --to-destination 192.168.0.1:80
+	[root@inetRouter2 ~]# iptables -t nat -A POSTROUTING -p tcp --dport 80 -j SNAT --to-source 192.168.0.2:8080
+
+И теперь с хоста делая запрос на uinetRouter2:8080
+	ashtrey@otuslearn:~$ curl 192.168.0.2:8080
+ Нам ответит Nginx с centralRouter
+
+ashtrey@otuslearn:~$ curl 192.168.0.2:8080
+	<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+	<html>
+	<head>
+	  <title>Welcome to CentOS</title>
+	  <style rel="stylesheet" type="text/css"> 
+	
+		html {
+		background-image:url(img/html-background.png);
+		background-color: white;
+		font-family: "DejaVu Sans", "Liberation Sans", sans-serif;
+		font-size: 0.85em;
+		line-height: 1.25em;
+		margin: 0 4% 0 4%;
+		}
+
+</details>
