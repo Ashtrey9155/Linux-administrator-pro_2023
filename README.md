@@ -4280,16 +4280,19 @@ default маршрут будет отправлять все пакеты в и
 		Проброс порта на centralRouter:80
  	</summary>
 
-  Для этого добавил на inetRouter2 пару правил
+Для этого добавил на inetRouter2 пару правил
 
   	[root@inetRouter2 ~]# iptables -t nat -A PREROUTING -p tcp --dport 8080 -j DNAT --to-destination 192.168.0.1:80
 	[root@inetRouter2 ~]# iptables -t nat -A POSTROUTING -p tcp --dport 80 -j SNAT --to-source 192.168.0.2:8080
 
-И теперь с хоста делая запрос на uinetRouter2:8080
+И теперь с хоста делая запрос на inetRouter2:8080
+
 	ashtrey@otuslearn:~$ curl 192.168.0.2:8080
- Нам ответит Nginx с centralRouter
+ 
+Нам ответит Nginx с centralRouter
 
 ashtrey@otuslearn:~$ curl 192.168.0.2:8080
+
 	<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 	<html>
 	<head>
