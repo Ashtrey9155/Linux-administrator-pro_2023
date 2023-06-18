@@ -1,0 +1,16 @@
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+COMMIT
+
+
+*nat
+:PREROUTING ACCEPT [3:184]
+:INPUT ACCEPT [3:184]
+:OUTPUT ACCEPT [69:5342]
+:POSTROUTING ACCEPT [69:5342]
+-A PREROUTING -p tcp --dport 8080 -j DNAT --to-destination 192.168.0.1:80
+-A POSTROUTING -p tcp --dport 80 -j SNAT --to-source 192.168.0.2:8080
+COMMIT
+# END or further rules
